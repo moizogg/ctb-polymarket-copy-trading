@@ -1,28 +1,71 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import GammaAPI from 'polymarket-provider';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const gammaApi = GammaAPI();
+  const isProd = process.env.NODE_ENV === 'production';
 
-  const config = new DocumentBuilder() 
+  // Security headers (API-friendly: disable CSP that breaks Swagger)
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
+
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (isProd && !corsOrigins?.length) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[CTB] WARNING: NODE_ENV=production but CORS_ORIGINS is empty. Set CORS_ORIGINS to your frontend URL.',
+    );
+  }
+
+  app.enableCors({
+    // Dev: allow all. Prod: only listed origins (or fail open with warn above).
+    origin: corsOrigins?.length ? corsOrigins : isProd ? false : true,
+    credentials: true,
+  });
+
+  if (isProd && !process.env.API_KEY?.trim()) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[CTB] WARNING: NODE_ENV=production without API_KEY. Set API_KEY to protect mutating routes.',
+    );
+  }
+
+  const config = new DocumentBuilder()
     .setTitle('CTB Copy Trading API')
     .setDescription(
-      'API used by the frontend: dashboard stats, followers (add/update/remove), alerts, weekly reports, comparative analysis, and Polymarket activity.',
+      'Production API for the operator dashboard: bot control, followers, dashboard stats, alerts, operator wallets, portfolio, charts.',
     )
-    .setVersion('1.0')
-    .addTag('Dashboard', 'Real-time stats, recent trades, weekly reports, comparative analysis')
-    .addTag('Followers (Followed Wallets)', 'List, add, update (active/inactive), remove followers')
-    .addTag('Alerts', 'Performance alerts and mark-as-read')
-    .addTag('Polymarket', 'Trade activity by wallet address')
+    .setVersion('1.2')
+    .addApiKey(
+      { type: 'apiKey', name: 'x-api-key', in: 'header' },
+      'api-key',
+    )
+    .addTag('Health', 'Liveness')
+    .addTag('Bot', 'Kill switch / status')
+    .addTag('Dashboard', 'Stats, recent trades, weekly reports, comparative analysis')
+    .addTag('Followers (Followed Wallets)', 'Leaders to copy')
+    .addTag('Operator Wallets', 'Linked browser wallets (MetaMask, etc.)')
+    .addTag('Alerts', 'Performance alerts')
+    .addTag('Polymarket', 'Activity and proxy wallet helpers')
+    .addTag('Portfolio', 'Live positions and bot reconcile')
+    .addTag('Charts', 'Price history, market search, bot equity')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  
-  app.enableCors({ origin: true }); // allow frontend (Next.js) to call API
-  await app.listen(process.env.PORT ?? 3000);
+
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  // eslint-disable-next-line no-console
+  console.log(`CTB API listening on http://localhost:${port} (docs: /api)`);
 }
 bootstrap();

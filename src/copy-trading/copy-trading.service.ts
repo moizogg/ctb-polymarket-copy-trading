@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { PolymarketClient } from 'src/clients/polymarket.client';
+import { BotService } from 'src/bot/bot.service';
 import { CopyTradingStrategy, NormalizedTrade } from './copy-trading.strategy';
 import { BotPosition } from './entities/bot-position.entity';
 import { LeaderTrade, TradeStatus } from './entities/leader-trade.entity';
@@ -7,57 +10,59 @@ import { LeaderTrade, TradeStatus } from './entities/leader-trade.entity';
 @Injectable()
 export class CopyTradingService {
   private readonly logger = new Logger(CopyTradingService.name);
-  private readonly leaderTrades: LeaderTrade[] = [];
-  private readonly botPositions: BotPosition[] = [];
 
   constructor(
     private readonly polyClient: PolymarketClient,
     private readonly strategy: CopyTradingStrategy,
+    private readonly botService: BotService,
+    @InjectRepository(LeaderTrade)
+    private readonly tradesRepo: Repository<LeaderTrade>,
+    @InjectRepository(BotPosition)
+    private readonly positionsRepo: Repository<BotPosition>,
   ) {}
 
-  /** Exposed for DashboardService (in-memory, no DB). */
-  getLeaderTrades(): LeaderTrade[] {
-    return [...this.leaderTrades];
+  async getLeaderTrades(): Promise<LeaderTrade[]> {
+    return this.tradesRepo.find({ order: { createdAt: 'DESC' } });
   }
 
-  /** Exposed for DashboardService (in-memory, no DB). */
-  getBotPositions(): BotPosition[] {
-    return [...this.botPositions];
+  async getBotPositions(): Promise<BotPosition[]> {
+    return this.positionsRepo.find({ order: { updatedAt: 'DESC' } });
   }
 
-  // ------------------------------------------------------------------
-  // Handle single trade
-  // ------------------------------------------------------------------
   async handleTrade(sourceWallet: string, rawTrade: any): Promise<void> {
     const tradeId = rawTrade?.id;
 
     try {
-      // 1️⃣ Idempotency
       if (await this.tradeExists(tradeId)) {
         return;
       }
 
-      // 2️⃣ Normalize
       const trade = this.normalizeTrade(rawTrade);
-
-      // 3️⃣ Leader delta
-      const leaderNetChange =
-        trade.side === 'BUY' ? trade.size : -trade.size;
-
-      // 4️⃣ Bot position
+      const leaderNetChange = trade.side === 'BUY' ? trade.size : -trade.size;
       const botCurrentPosition = await this.getBotPosition(
         trade.marketId,
         trade.tokenID,
       );
 
-      // 5️⃣ Strategy
       const decision = this.strategy.decide({
         leaderNetChange,
         botCurrentPosition,
         trade,
       });
 
-      // 6️⃣ Persist BEFORE execution
+      // Global kill switch — still record as SKIPPED so dashboard stays honest
+      const copyEnabled = await this.botService.isCopyTradingEnabled();
+      if (decision.shouldTrade && !copyEnabled) {
+        await this.saveTrade(trade, sourceWallet, {
+          status: TradeStatus.SKIPPED,
+          reason: 'Copy trading paused (kill switch)',
+        });
+        this.logger.debug(
+          `Skip trade ${trade.tradeId}: copy trading paused`,
+        );
+        return;
+      }
+
       await this.saveTrade(trade, sourceWallet, {
         status: decision.shouldTrade
           ? TradeStatus.PENDING
@@ -72,22 +77,11 @@ export class CopyTradingService {
         return;
       }
 
-      // 7️⃣ Execute (measure latency: leader trade time → execution done)
       const executedAt = new Date();
-      await this.executeTrade(
-        trade,
-        decision.side!,
-        decision.size!,
-      );
+      await this.executeTrade(trade, decision.side!, decision.size!);
 
-      // 8️⃣ Update bot position
-      await this.updateBotPosition(
-        trade,
-        decision.side!,
-        decision.size!,
-      );
+      await this.updateBotPosition(trade, decision.side!, decision.size!);
 
-      // 9️⃣ Mark copied and persist latency breakdown
       const leaderTradeAt = this.toLeaderTradeAt(trade.leaderTradeTimestamp);
       const fetchedAt = trade.fetchedAt;
       const latencyMs = leaderTradeAt
@@ -97,8 +91,10 @@ export class CopyTradingService {
         leaderTradeAt && fetchedAt
           ? Math.round(fetchedAt.getTime() - leaderTradeAt.getTime())
           : null;
-      const executionLatencyMs =
-        fetchedAt ? Math.round(executedAt.getTime() - fetchedAt.getTime()) : null;
+      const executionLatencyMs = fetchedAt
+        ? Math.round(executedAt.getTime() - fetchedAt.getTime())
+        : null;
+
       await this.updateTradeStatus(trade.tradeId, TradeStatus.COPIED, undefined, {
         copiedAt: executedAt,
         latencyMs: latencyMs ?? undefined,
@@ -106,12 +102,12 @@ export class CopyTradingService {
         executionLatencyMs: executionLatencyMs ?? undefined,
         executedSize: decision.size!.toString(),
       });
+
       if (latencyMs != null) {
         this.logger.log(
           `Copy trade ${trade.tradeId} latency: ${latencyMs} ms (fetch: ${fetchLatencyMs ?? '—'} ms, execution: ${executionLatencyMs ?? '—'} ms)`,
         );
       }
-
     } catch (err) {
       this.logger.error(
         `Failed handling trade ${tradeId} from ${sourceWallet}`,
@@ -119,18 +115,17 @@ export class CopyTradingService {
       );
 
       if (tradeId) {
-        await this.updateTradeStatus(tradeId, TradeStatus.FAILED, err?.message);
+        const message =
+          err instanceof Error ? err.message : String(err ?? 'Unknown error');
+        await this.updateTradeStatus(tradeId, TradeStatus.FAILED, message);
       }
     }
   }
 
-  // ------------------------------------------------------------------
-  // DB helpers
-  // ------------------------------------------------------------------
-
   private async tradeExists(tradeId: string): Promise<boolean> {
     if (!tradeId) return true;
-    return this.leaderTrades.some((t) => t.tradeId === tradeId);
+    const count = await this.tradesRepo.count({ where: { tradeId } });
+    return count > 0;
   }
 
   private toLeaderTradeAt(ts: number | undefined): Date | null {
@@ -147,26 +142,32 @@ export class CopyTradingService {
       reason?: string;
     },
   ): Promise<void> {
-    if (this.leaderTrades.some((t) => t.tradeId === trade.tradeId)) return;
+    const exists = await this.tradeExists(trade.tradeId);
+    if (exists) return;
 
     const leaderTradeAt = this.toLeaderTradeAt(trade.leaderTradeTimestamp);
-    const entity: LeaderTrade = {
-      id: crypto.randomUUID(),
+    const entity = this.tradesRepo.create({
       tradeId: trade.tradeId,
       wallet: sourceWallet,
       marketId: trade.marketId,
       tokenId: trade.tokenID,
-      slug: trade.slug ?? undefined,
+      slug: trade.slug ?? null,
       side: trade.side,
       size: trade.size.toString(),
       price: trade.price.toString(),
       status: meta?.status ?? TradeStatus.PENDING,
-      reason: meta?.reason,
-      leaderTradeAt: leaderTradeAt ?? undefined,
-      fetchedAt: trade.fetchedAt ?? undefined,
-      createdAt: new Date(),
-    };
-    this.leaderTrades.push(entity);
+      reason: meta?.reason ?? null,
+      leaderTradeAt: leaderTradeAt ?? null,
+      fetchedAt: trade.fetchedAt ?? null,
+    });
+
+    try {
+      await this.tradesRepo.save(entity);
+    } catch (err: any) {
+      // Unique violation = concurrent idempotency
+      if (err?.code === '23505') return;
+      throw err;
+    }
   }
 
   private async updateTradeStatus(
@@ -181,18 +182,31 @@ export class CopyTradingService {
       executedSize?: string;
     },
   ): Promise<void> {
-    const t = this.leaderTrades.find((x) => x.tradeId === tradeId);
-    if (t) {
-      t.status = status;
-      if (reason !== undefined) t.reason = reason;
-      if (extra) Object.assign(t, extra);
+    const t = await this.tradesRepo.findOne({ where: { tradeId } });
+    if (!t) return;
+    t.status = status;
+    if (reason !== undefined) t.reason = reason;
+    if (extra) {
+      if (extra.copiedAt !== undefined) t.copiedAt = extra.copiedAt;
+      if (extra.latencyMs !== undefined) t.latencyMs = extra.latencyMs;
+      if (extra.fetchLatencyMs !== undefined) {
+        t.fetchLatencyMs = extra.fetchLatencyMs;
+      }
+      if (extra.executionLatencyMs !== undefined) {
+        t.executionLatencyMs = extra.executionLatencyMs;
+      }
+      if (extra.executedSize !== undefined) t.executedSize = extra.executedSize;
     }
+    await this.tradesRepo.save(t);
   }
 
-  private async getBotPosition(marketId: string, tokenId: string): Promise<number> {
-    const botPos = this.botPositions.find(
-      (p) => p.marketId === marketId && p.tokenId === tokenId,
-    );
+  private async getBotPosition(
+    marketId: string,
+    tokenId: string,
+  ): Promise<number> {
+    const botPos = await this.positionsRepo.findOne({
+      where: { marketId, tokenId },
+    });
     return botPos ? Number(botPos.netSize) : 0;
   }
 
@@ -201,27 +215,21 @@ export class CopyTradingService {
     side: 'BUY' | 'SELL',
     size: number,
   ): Promise<void> {
-    let botPos = this.botPositions.find(
-      (p) => p.marketId === trade.marketId && p.tokenId === trade.tokenID,
-    );
+    let botPos = await this.positionsRepo.findOne({
+      where: { marketId: trade.marketId, tokenId: trade.tokenID },
+    });
     if (!botPos) {
-      botPos = {
-        id: crypto.randomUUID(),
+      botPos = this.positionsRepo.create({
         marketId: trade.marketId,
         tokenId: trade.tokenID,
         netSize: '0',
-        updatedAt: new Date(),
-      };
-      this.botPositions.push(botPos);
+      });
     }
     const delta = side === 'BUY' ? size : -size;
     botPos.netSize = (Number(botPos.netSize) + delta).toString();
-    botPos.updatedAt = new Date();
+    await this.positionsRepo.save(botPos);
   }
 
-  // ------------------------------------------------------------------
-  // Normalization
-  // ------------------------------------------------------------------
   private normalizeTrade(raw: any): NormalizedTrade {
     return {
       tradeId: raw.id,
@@ -231,14 +239,15 @@ export class CopyTradingService {
       side: raw.side,
       size: Number(raw.size),
       price: Number(raw.price),
-      leaderTradeTimestamp: raw.leaderTradeTimestamp != null ? Number(raw.leaderTradeTimestamp) : undefined,
-      fetchedAt: raw.fetchedAt != null ? new Date(Number(raw.fetchedAt)) : undefined,
+      leaderTradeTimestamp:
+        raw.leaderTradeTimestamp != null
+          ? Number(raw.leaderTradeTimestamp)
+          : undefined,
+      fetchedAt:
+        raw.fetchedAt != null ? new Date(Number(raw.fetchedAt)) : undefined,
     };
   }
 
-  // ------------------------------------------------------------------
-  // Execution
-  // ------------------------------------------------------------------
   private async executeTrade(
     trade: NormalizedTrade,
     side: 'BUY' | 'SELL',
@@ -250,8 +259,13 @@ export class CopyTradingService {
       throw new Error('Missing tokenID');
     }
 
+    const tickSize = process.env.DEFAULT_TICK_SIZE?.trim() || '0.01';
+    const negRisk =
+      process.env.DEFAULT_NEG_RISK === '1' ||
+      process.env.DEFAULT_NEG_RISK?.toLowerCase() === 'true';
+
     this.logger.log(
-      `Executing ${side} ${size} @ ${trade.price} (${trade.tokenID})`,
+      `Executing ${side} ${size} @ ${trade.price} (${trade.tokenID}) tick=${tickSize} negRisk=${negRisk}`,
     );
 
     await client.createAndPostOrder(
@@ -262,8 +276,8 @@ export class CopyTradingService {
         size,
       },
       {
-        tickSize: '0.01',
-        negRisk: false,
+        tickSize,
+        negRisk,
       },
     );
   }

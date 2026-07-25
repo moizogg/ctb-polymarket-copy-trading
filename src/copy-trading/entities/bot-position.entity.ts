@@ -1,20 +1,26 @@
-import { Entity, Column, PrimaryGeneratedColumn, UpdateDateColumn, Unique } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  Unique,
+} from 'typeorm';
 
-@Entity()
+@Entity('bot_positions')
 @Unique(['marketId', 'tokenId'])
 export class BotPosition {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   marketId: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   tokenId: string;
 
-  @Column('decimal', { precision: 36, scale: 18, default: 0 })
+  @Column({ type: 'decimal', precision: 36, scale: 18, default: 0 })
   netSize: string;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

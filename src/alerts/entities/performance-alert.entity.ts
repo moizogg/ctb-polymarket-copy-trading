@@ -23,31 +23,35 @@ export enum AlertSeverity {
 @Entity('performance_alerts')
 @Index(['createdAt'])
 export class PerformanceAlert {
-  @ApiProperty({ description: 'Alert UUID' })
+  @ApiProperty()
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiProperty({ enum: AlertType, description: 'Alert type' })
+  @ApiProperty({ enum: AlertType })
   @Column({ type: 'enum', enum: AlertType })
   type: AlertType;
 
-  @ApiProperty({ enum: AlertSeverity, description: 'Severity' })
-  @Column({ type: 'enum', enum: AlertSeverity, default: AlertSeverity.WARNING })
+  @ApiProperty({ enum: AlertSeverity })
+  @Column({
+    type: 'enum',
+    enum: AlertSeverity,
+    default: AlertSeverity.WARNING,
+  })
   severity: AlertSeverity;
 
-  @ApiProperty({ description: 'Alert message' })
+  @ApiProperty()
   @Column({ type: 'varchar', length: 500 })
   message: string;
 
-  @ApiProperty({ description: 'Extra metadata', required: false })
-  @Column({ type: 'json', nullable: true })
-  metadata?: Record<string, unknown>;
+  @ApiProperty({ required: false })
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, unknown> | null;
 
-  @ApiProperty({ description: 'Whether the alert has been read' })
+  @ApiProperty()
   @Column({ default: false })
   read: boolean;
 
-  @ApiProperty({ description: 'Created at (ISO 8601)' })
-  @CreateDateColumn()
+  @ApiProperty()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

@@ -23,10 +23,13 @@ export interface StrategyDecision {
 
 @Injectable()
 export class CopyTradingStrategy {
-  // ---- CONFIG ----
-  private readonly MIN_EXECUTABLE_SIZE = 1; // Polymarket minimum
-  private readonly MIN_SIGNAL_SIZE = 5;     // ignore micro rebalances
-  private readonly MAX_POSITION_SIZE = 5;   // always copy with exactly 5 shares (don't buy more)
+  private get minSignalSize(): number {
+    return Number(process.env.MIN_SIGNAL_SIZE ?? 5);
+  }
+
+  private get maxPositionSize(): number {
+    return Number(process.env.MAX_POSITION_SIZE ?? 5);
+  }
 
   decide(params: {
     leaderNetChange: number;
@@ -35,18 +38,15 @@ export class CopyTradingStrategy {
   }): StrategyDecision {
     const { leaderNetChange, botCurrentPosition } = params;
 
-    // Ignore noise
-    if (Math.abs(leaderNetChange) < this.MIN_SIGNAL_SIZE) {
+    if (Math.abs(leaderNetChange) < this.minSignalSize) {
       return {
         shouldTrade: false,
         reason: 'Leader change too small (rebalance)',
       };
     }
 
-    const side: 'BUY' | 'SELL' =
-      leaderNetChange > 0 ? 'BUY' : 'SELL';
+    const side: 'BUY' | 'SELL' = leaderNetChange > 0 ? 'BUY' : 'SELL';
 
-    // Already aligned
     if (
       (side === 'BUY' && botCurrentPosition > 0) ||
       (side === 'SELL' && botCurrentPosition < 0)
@@ -60,7 +60,7 @@ export class CopyTradingStrategy {
     return {
       shouldTrade: true,
       side,
-      size: this.MAX_POSITION_SIZE,
+      size: this.maxPositionSize,
       reason: 'Leader showed meaningful intent',
     };
   }

@@ -1,18 +1,28 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { FollowedWallet } from './entity/followed-wallet.entity';
 
 @Injectable()
 export class FollowedWalletsService {
-  private readonly store: FollowedWallet[] = [];
+  constructor(
+    @InjectRepository(FollowedWallet)
+    private readonly repo: Repository<FollowedWallet>,
+  ) {}
 
   async findAll(): Promise<FollowedWallet[]> {
-    return [...this.store].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    return this.repo.find({ order: { createdAt: 'DESC' } });
   }
 
   async findActive(): Promise<FollowedWallet[]> {
-    return this.store.filter((w) => w.isActive);
+    return this.repo.find({
+      where: { isActive: true },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async add(wallet: string, label?: string): Promise<FollowedWallet> {
@@ -21,21 +31,16 @@ export class FollowedWalletsService {
       throw new ConflictException('Wallet address is required');
     }
 
-    const existing = this.store.find((w) => w.wallet === normalized);
+    const existing = await this.repo.findOne({ where: { wallet: normalized } });
     if (existing) return existing;
 
-    const now = new Date();
-    const newWallet: FollowedWallet = {
-      id: crypto.randomUUID(),
+    const entity = this.repo.create({
       wallet: normalized,
-      label: label?.trim() || undefined,
+      label: label?.trim() || null,
       isActive: true,
-      lastTradeId: undefined,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.store.push(newWallet);
-    return newWallet;
+      lastTradeId: null,
+    });
+    return this.repo.save(entity);
   }
 
   async update(
@@ -46,29 +51,33 @@ export class FollowedWalletsService {
       lastTradeId?: string | null;
     },
   ): Promise<FollowedWallet> {
-    const wallet = this.store.find((w) => w.id === id);
+    const wallet = await this.repo.findOne({ where: { id } });
     if (!wallet) throw new NotFoundException('Followed wallet not found');
 
-    if (data.label !== undefined) wallet.label = data.label?.trim() || undefined;
+    if (data.label !== undefined) {
+      wallet.label = data.label?.trim() || null;
+    }
     if (data.isActive !== undefined) wallet.isActive = data.isActive;
     if (data.lastTradeId !== undefined) {
       wallet.lastTradeId =
-        data.lastTradeId === null || data.lastTradeId === '' ? null : data.lastTradeId;
+        data.lastTradeId === null || data.lastTradeId === ''
+          ? null
+          : data.lastTradeId;
     }
-    wallet.updatedAt = new Date();
-    return wallet;
+    return this.repo.save(wallet);
   }
 
   async remove(id: string) {
-    const idx = this.store.findIndex((w) => w.id === id);
-    if (idx !== -1) this.store.splice(idx, 1);
+    const res = await this.repo.delete(id);
+    if (!res.affected) {
+      // idempotent delete
+    }
     return { ok: true };
   }
 
   async removeByWallet(wallet: string) {
     const normalized = wallet.trim().toLowerCase();
-    const idx = this.store.findIndex((w) => w.wallet === normalized);
-    if (idx !== -1) this.store.splice(idx, 1);
+    await this.repo.delete({ wallet: normalized });
     return { ok: true };
   }
 }
