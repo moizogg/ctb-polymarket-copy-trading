@@ -314,7 +314,9 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-400">Total Signals</span>
                     <span className="font-bold tabular-nums text-slate-200">
-                      {compare.bot.totalSignals}
+                      {compare.bot.totalCopied +
+                        compare.bot.totalSkipped +
+                        compare.bot.totalFailed}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
