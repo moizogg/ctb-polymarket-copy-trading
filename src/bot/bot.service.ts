@@ -43,11 +43,11 @@ export class BotService implements OnModuleInit {
     if (!row) {
       row = this.settingsRepo.create({
         id: SETTINGS_ID,
-        copyTradingEnabled: true,
-        pauseReason: null,
+        copyTradingEnabled: false,
+        pauseReason: 'Default safety pause (Kill switch ON). Turn off pause to start live copy trading.',
       });
       row = await this.settingsRepo.save(row);
-      this.logger.log('Initialized bot_settings (copyTradingEnabled=true)');
+      this.logger.log('Initialized bot_settings (copyTradingEnabled=false, kill switch ON by default)');
     }
     return row;
   }
@@ -72,10 +72,14 @@ export class BotService implements OnModuleInit {
 
   async getStatus(): Promise<BotStatusDto> {
     const row = await this.ensureSettings();
+    const address =
+      row.executionAddress?.trim() ||
+      process.env.FUNDER_ADDRESS?.trim() ||
+      null;
     return {
       copyTradingEnabled: row.copyTradingEnabled,
       pauseReason: row.pauseReason ?? null,
-      executionAddress: process.env.FUNDER_ADDRESS?.trim() || null,
+      executionAddress: address,
       updatedAt: row.updatedAt ? row.updatedAt.toISOString() : null,
       pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? 1500),
       lastPollAt: this.lastPollAt ? this.lastPollAt.toISOString() : null,
@@ -84,6 +88,39 @@ export class BotService implements OnModuleInit {
       activeLeadersPolled: this.activeLeadersPolled,
       serverTime: new Date().toISOString(),
     };
+  }
+
+  async saveConfig(dto: {
+    funderAddress: string;
+    apiCreds?: Record<string, unknown> | string;
+  }): Promise<BotStatusDto> {
+    const row = await this.ensureSettings();
+    row.executionAddress = dto.funderAddress.trim().toLowerCase();
+    if (dto.apiCreds) {
+      row.apiCredsJson =
+        typeof dto.apiCreds === 'string'
+          ? dto.apiCreds
+          : JSON.stringify(dto.apiCreds);
+    }
+    await this.settingsRepo.save(row);
+    this.logger.log(`Saved dynamic execution config for ${row.executionAddress}`);
+    return this.getStatus();
+  }
+
+  async getDynamicCreds(): Promise<{
+    funderAddress: string | null;
+    apiCredsJson: string | null;
+  }> {
+    const row = await this.ensureSettings();
+    const funderAddress =
+      row.executionAddress?.trim() ||
+      process.env.FUNDER_ADDRESS?.trim() ||
+      null;
+    const apiCredsJson =
+      row.apiCredsJson?.trim() ||
+      process.env.POLYMARKET_API_CREDS?.trim() ||
+      null;
+    return { funderAddress, apiCredsJson };
   }
 
   async pause(reason?: string): Promise<BotStatusDto> {

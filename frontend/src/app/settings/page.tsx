@@ -110,6 +110,28 @@ export default function SettingsPage() {
             <span className="text-zinc-200">{connector?.name || '—'}</span>
           </div>
         </div>
+
+        {isConnected && address ? (
+          <div className="mt-4 border-t border-zinc-800/80 pt-3">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const resolved = await api.polymarket.proxyWallet(address);
+                  const funder = resolved.proxyWallet || address;
+                  await api.bot.saveConfig({ funderAddress: funder });
+                  qc.invalidateQueries({ queryKey: ['bot-status'] });
+                  alert(`Execution wallet set to ${funder}! To enable live trading, turn off the Pause Kill Switch above.`);
+                } catch (err: any) {
+                  alert(`Failed setting execution wallet: ${err.message}`);
+                }
+              }}
+              className="rounded-lg bg-emerald-500/90 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400"
+            >
+              ⚡ Link Connected Wallet for Live Trading
+            </button>
+          </div>
+        ) : null}
       </section>
 
       <section className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">

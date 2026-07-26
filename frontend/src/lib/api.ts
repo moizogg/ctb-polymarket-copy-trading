@@ -242,6 +242,11 @@ export const api = {
 
   bot: {
     status: () => request<BotStatus>('/bot/status'),
+    saveConfig: (data: { funderAddress: string; apiCreds?: any }) =>
+      request<BotStatus>('/bot/config', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     pause: (reason?: string) =>
       request<BotStatus>('/bot/pause', {
         method: 'POST',

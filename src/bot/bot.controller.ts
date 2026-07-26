@@ -6,6 +6,11 @@ class PauseBotDto {
   reason?: string;
 }
 
+class SaveConfigDto {
+  funderAddress: string;
+  apiCreds?: any;
+}
+
 @ApiTags('Bot')
 @Controller('bot')
 export class BotController {
@@ -15,6 +20,13 @@ export class BotController {
   @ApiOperation({ summary: 'Bot status (running/paused, execution address)' })
   getStatus() {
     return this.bot.getStatus();
+  }
+
+  @Post('config')
+  @ApiOperation({ summary: 'Save dynamic execution wallet and credentials from frontend' })
+  @ApiBody({ type: SaveConfigDto })
+  saveConfig(@Body() body: SaveConfigDto) {
+    return this.bot.saveConfig(body);
   }
 
   @Post('pause')
