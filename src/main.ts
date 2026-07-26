@@ -63,9 +63,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
+  // Railway (and most PaaS) need 0.0.0.0 — not localhost — or public URL returns 502
+  const port = Number(process.env.PORT ?? 3000);
+  const host = process.env.HOST ?? '0.0.0.0';
+  await app.listen(port, host);
   // eslint-disable-next-line no-console
-  console.log(`CTB API listening on http://localhost:${port} (docs: /api)`);
+  console.log(`CTB API listening on http://${host}:${port} (docs: /api)`);
 }
 bootstrap();
