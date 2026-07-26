@@ -8,12 +8,15 @@ import {
   useSwitchChain,
 } from 'wagmi';
 import { polygon } from 'viem/chains';
-import { Wallet, AlertCircle, CheckCircle2, LogOut } from 'lucide-react';
 
 function short(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
+/**
+ * Connect any injected browser wallet (MetaMask, Rabby, Trust extension, Brave…).
+ * Opens the extension — no WalletConnect project id required.
+ */
 export function ConnectWallet() {
   const { address, isConnected, isConnecting } = useAccount();
   const { connect, connectors, error, isPending, reset } = useConnect();
@@ -32,25 +35,22 @@ export function ConnectWallet() {
             type="button"
             disabled={switching}
             onClick={() => switchChain({ chainId: polygon.id })}
-            className="flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 transition cursor-pointer"
+            className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20"
           >
-            <AlertCircle className="h-3.5 w-3.5" />
-            <span>Switch to Polygon</span>
+            Switch to Polygon
           </button>
         ) : (
-          <span className="hidden items-center gap-1 text-[11px] font-semibold text-emerald-400 sm:inline-flex bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
-            <CheckCircle2 className="h-3 w-3" /> Polygon
+          <span className="hidden text-[11px] text-zinc-500 sm:inline">
+            Polygon
           </span>
         )}
         <button
           type="button"
           onClick={() => disconnect()}
-          className="flex items-center gap-2 rounded-lg border border-[#1c202b] bg-[#11131a] px-3 py-1.5 font-mono text-xs font-semibold text-slate-200 hover:bg-[#181b24] hover:border-slate-700 transition cursor-pointer"
-          title="Click to disconnect wallet"
+          className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 font-mono text-xs text-zinc-200 hover:bg-zinc-800"
+          title="Click to disconnect"
         >
-          <Wallet className="h-3.5 w-3.5 text-slate-400" />
-          <span>{short(address)}</span>
-          <LogOut className="h-3 w-3 text-slate-500 hover:text-rose-400 transition" />
+          {short(address)}
         </button>
       </div>
     );
@@ -64,20 +64,24 @@ export function ConnectWallet() {
         onClick={() => {
           reset();
           if (!connector) return;
+          // Prefer user-facing name; injected() covers MetaMask when installed
           connect({ connector, chainId: polygon.id });
         }}
-        className="flex items-center gap-2 rounded-lg bg-emerald-500 px-3.5 py-1.5 text-xs font-bold text-slate-950 hover:bg-emerald-400 disabled:opacity-50 transition cursor-pointer shadow-sm"
+        className="rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-medium text-zinc-950 hover:bg-emerald-400 disabled:opacity-50"
       >
-        <Wallet className="h-4 w-4" />
-        <span>{isPending || isConnecting ? 'Connecting…' : 'Connect Wallet'}</span>
+        {isPending || isConnecting ? 'Connecting…' : 'Connect Wallet'}
       </button>
       {error ? (
-        <span className="max-w-[260px] text-right text-[11px] font-medium text-rose-400">
+        <span className="max-w-[260px] text-right text-[11px] text-red-400">
           {/provider|ethereum|not found|connector/i.test(error.message)
-            ? 'No wallet extension found. Install MetaMask/Rabby.'
+            ? 'No wallet extension found. Install MetaMask and refresh.'
             : error.message}
         </span>
-      ) : null}
+      ) : (
+        <span className="max-w-[240px] text-right text-[10px] text-zinc-600">
+          MetaMask / Rabby / Trust extension
+        </span>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
 import { PriceChart } from '@/components/price-chart';
+import { LineChart, Search, Activity, TrendingUp, Layers } from 'lucide-react';
 
 const INTERVALS = [
   { id: '1h', label: '1H' },
@@ -76,33 +77,38 @@ function ChartsInner() {
   }, [equityQ.data, equityMode]);
 
   return (
-    <div>
+    <div className="space-y-8">
       <PageHeader
-        title="Charts"
-        description="Market prices (Polymarket CLOB) and bot copy performance from your trade log."
+        title="Market & Equity Analytics"
+        description="Polymarket order book token prices and internal bot performance curves."
       />
 
-      <section className="mb-10">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-medium text-zinc-300">Market price</h2>
-            <p className="text-xs text-zinc-600">
-              {marketLabel ||
-                (tokenId
-                  ? `Token ${tokenId.slice(0, 12)}…`
-                  : 'Pick a market below')}
-            </p>
+      {/* Market Price Chart Section */}
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <LineChart className="h-5 w-5 text-emerald-400" />
+            <div>
+              <h2 className="text-base font-bold text-slate-100">Market Price Action</h2>
+              <p className="text-xs text-slate-400 font-mono">
+                {marketLabel ||
+                  (tokenId
+                    ? `Token ${tokenId.slice(0, 14)}…`
+                    : 'Select a market below to load candlestick data')}
+              </p>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1">
+
+          <div className="flex flex-wrap gap-1 rounded-lg border border-[#1c202b] bg-[#0c0e13] p-1">
             {INTERVALS.map((iv) => (
               <button
                 key={iv.id}
                 type="button"
                 onClick={() => setIntervalRange(iv.id)}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium ${
+                className={`rounded px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
                   interval === iv.id
-                    ? 'bg-emerald-500/15 text-emerald-400'
-                    : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 {iv.label}
@@ -112,49 +118,56 @@ function ChartsInner() {
         </div>
 
         {historyQ.isError ? (
-          <div className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-300">
             {(historyQ.error as Error).message}
           </div>
         ) : null}
 
-        {tokenId ? (
-          pricePoints.length ? (
-            <PriceChart points={pricePoints} height={340} />
+        <div className="saas-card overflow-hidden p-4">
+          {tokenId ? (
+            pricePoints.length ? (
+              <PriceChart points={pricePoints} height={360} />
+            ) : (
+              <div className="flex h-[360px] items-center justify-center text-xs font-medium text-slate-500">
+                {historyQ.isLoading
+                  ? 'Loading market candles from Polymarket CLOB…'
+                  : 'No price history points available for this range.'}
+              </div>
+            )
           ) : (
-            <div className="flex h-[340px] items-center justify-center rounded-xl border border-zinc-800 text-sm text-zinc-500">
-              {historyQ.isLoading
-                ? 'Loading price history…'
-                : 'No history for this range.'}
+            <div className="flex h-[360px] flex-col items-center justify-center text-xs font-medium text-slate-500 border border-dashed border-[#1c202b] rounded-xl">
+              <Search className="h-8 w-8 text-slate-600 mb-2" />
+              <span>Search or pick a market token below to load interactive chart</span>
             </div>
-          )
-        ) : (
-          <div className="flex h-[340px] items-center justify-center rounded-xl border border-dashed border-zinc-700 text-sm text-zinc-500">
-            Select a market to load the chart
-          </div>
-        )}
+          )}
+        </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border border-zinc-800 p-4">
-            <label className="text-xs text-zinc-500">
-              Search markets
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="e.g. trump, bitcoin, election…"
-                className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500/40"
-              />
-            </label>
-            <ul className="mt-3 max-h-64 space-y-1 overflow-y-auto">
+        {/* Market Search & Recent Tokens Grid */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="saas-card p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Search className="h-4 w-4 text-emerald-400" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                Search Polymarket Catalogs
+              </span>
+            </div>
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search e.g. Bitcoin, Election, Fed rate…"
+              className="w-full rounded-lg border border-[#1c202b] bg-[#0c0e13] px-3.5 py-2 text-xs text-slate-100 placeholder-slate-600 outline-none focus:border-emerald-500/50 transition mb-3"
+            />
+            <ul className="max-h-60 space-y-1 overflow-y-auto pr-1">
               {marketsQ.isLoading ? (
-                <li className="text-xs text-zinc-500">Loading markets…</li>
+                <li className="text-xs text-slate-500">Searching Polymarket API…</li>
               ) : (marketsQ.data ?? []).length === 0 ? (
-                <li className="text-xs text-zinc-500">No markets found.</li>
+                <li className="text-xs text-slate-500">No matching markets found.</li>
               ) : (
                 marketsQ.data!.map((m) => (
                   <li key={String(m.id || m.slug)}>
                     <button
                       type="button"
-                      className="w-full rounded-lg px-2 py-2 text-left hover:bg-zinc-900"
+                      className="w-full rounded-lg p-2.5 text-left hover:bg-[#151821] border border-transparent hover:border-[#1c202b] transition cursor-pointer"
                       onClick={() => {
                         const yes = m.yesTokenId || m.outcomes?.[0]?.tokenId;
                         if (yes) {
@@ -165,120 +178,108 @@ function ChartsInner() {
                         }
                       }}
                     >
-                      <div className="line-clamp-2 text-sm text-zinc-200">
+                      <div className="line-clamp-2 text-xs font-bold text-slate-200">
                         {m.question}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap gap-2 text-[11px] text-zinc-500">
+                      <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-slate-500 font-mono">
                         {m.outcomes?.slice(0, 2).map((o) => (
                           <span key={o.tokenId || o.name}>
                             {o.name}
-                            {o.price != null ? ` ${o.price}` : ''}
+                            {o.price != null ? ` ($${o.price})` : ''}
                           </span>
                         ))}
                       </div>
                     </button>
-                    {m.outcomes && m.outcomes.length > 1 ? (
-                      <div className="mb-1 ml-2 flex flex-wrap gap-1">
-                        {m.outcomes.map((o) =>
-                          o.tokenId ? (
-                            <button
-                              key={o.tokenId}
-                              type="button"
-                              className="rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] text-zinc-400 hover:border-emerald-500/40 hover:text-emerald-400"
-                              onClick={() => {
-                                setTokenId(o.tokenId);
-                                setMarketLabel(`${m.question} · ${o.name}`);
-                              }}
-                            >
-                              Chart {o.name}
-                            </button>
-                          ) : null,
-                        )}
-                      </div>
-                    ) : null}
                   </li>
                 ))
               )}
             </ul>
           </div>
 
-          <div className="rounded-xl border border-zinc-800 p-4">
-            <div className="text-xs font-medium text-zinc-500">
-              From bot trade log
+          <div className="saas-card p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Layers className="h-4 w-4 text-emerald-400" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                Recent Bot Trade Tokens
+              </span>
             </div>
-            <ul className="mt-3 max-h-64 space-y-1 overflow-y-auto">
+            <ul className="max-h-60 space-y-1 overflow-y-auto pr-1">
               {(recentQ.data ?? []).length === 0 ? (
-                <li className="text-xs text-zinc-500">
-                  No tokens from trades yet. After the bot logs activity, pick
-                  them here for one-click charts.
+                <li className="text-xs text-slate-500">
+                  No traded tokens recorded yet. After the bot copies signals, tokens appear here.
                 </li>
               ) : (
                 recentQ.data!.map((r) => (
                   <li key={r.tokenId}>
                     <button
                       type="button"
-                      className="w-full rounded-lg px-2 py-2 text-left hover:bg-zinc-900"
+                      className="w-full rounded-lg p-2.5 text-left hover:bg-[#151821] border border-transparent hover:border-[#1c202b] transition cursor-pointer"
                       onClick={() => {
                         setTokenId(r.tokenId);
                         setMarketLabel(r.slug || `${r.tokenId.slice(0, 16)}…`);
                       }}
                     >
-                      <div className="text-sm text-zinc-200">
-                        {r.slug || 'Market token'}
+                      <div className="text-xs font-bold text-slate-200">
+                        {r.slug || 'Market Token'}
                       </div>
-                      <div className="font-mono text-[11px] text-zinc-500">
-                        {r.side} · {r.tokenId.slice(0, 18)}…
+                      <div className="font-mono text-[11px] text-slate-500">
+                        {r.side} · {r.tokenId.slice(0, 20)}…
                       </div>
                     </button>
                   </li>
                 ))
               )}
             </ul>
-            <label className="mt-3 block text-xs text-zinc-500">
-              Or paste token id
+
+            <div className="mt-4 border-t border-[#1c202b] pt-3">
+              <label className="block text-[11px] font-bold text-slate-400 mb-1">
+                Direct Token ID Override
+              </label>
               <input
                 value={tokenId}
                 onChange={(e) => {
                   setTokenId(e.target.value.trim());
                   setMarketLabel('');
                 }}
-                placeholder="CLOB token id"
-                className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-xs text-zinc-100 outline-none focus:border-emerald-500/40"
+                placeholder="Paste CLOB Token ID string"
+                className="w-full rounded-lg border border-[#1c202b] bg-[#0c0e13] px-3 py-2 font-mono text-xs text-slate-100 placeholder-slate-600 outline-none focus:border-emerald-500/50 transition"
               />
-            </label>
+            </div>
           </div>
         </div>
       </section>
 
-      <section>
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-medium text-zinc-300">
-              Bot performance
-            </h2>
-            <p className="text-xs text-zinc-600">
-              Built from COPIED trades in your database.
-              {equityQ.data
-                ? ` · ${equityQ.data.totalCopied} copies total`
-                : ''}
-            </p>
+      {/* Bot Equity & Copy Performance Curve */}
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-emerald-400" />
+            <div>
+              <h2 className="text-base font-bold text-slate-100">
+                Bot Equity Growth Curve
+              </h2>
+              <p className="text-xs text-slate-400">
+                Cumulative curve generated from executed COPIED trades.
+              </p>
+            </div>
           </div>
-          <div className="flex gap-1">
+
+          <div className="flex gap-1 rounded-lg border border-[#1c202b] bg-[#0c0e13] p-1">
             {(
               [
-                ['copies', 'Copies'],
-                ['notional', 'Notional'],
-                ['signed', 'Cash proxy'],
+                ['copies', 'Copies Count'],
+                ['notional', 'Gross Volume ($)'],
+                ['signed', 'Net Cash Proxy ($)'],
               ] as const
             ).map(([id, label]) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setEquityMode(id)}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium ${
+                className={`rounded px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
                   equityMode === id
-                    ? 'bg-sky-500/15 text-sky-400'
-                    : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 {label}
@@ -287,19 +288,17 @@ function ChartsInner() {
           </div>
         </div>
 
-        {equityQ.data?.note ? (
-          <p className="mb-2 text-[11px] text-zinc-600">{equityQ.data.note}</p>
-        ) : null}
-
-        {equityPoints.length ? (
-          <PriceChart points={equityPoints} height={280} lineColor="#38bdf8" />
-        ) : (
-          <div className="flex h-[280px] items-center justify-center rounded-xl border border-zinc-800 text-sm text-zinc-500">
-            {equityQ.isLoading
-              ? 'Loading equity…'
-              : 'No COPIED trades yet — curve fills as the bot copies leaders.'}
-          </div>
-        )}
+        <div className="saas-card overflow-hidden p-4">
+          {equityPoints.length ? (
+            <PriceChart points={equityPoints} height={300} lineColor="#10b981" />
+          ) : (
+            <div className="flex h-[300px] items-center justify-center text-xs font-medium text-slate-500">
+              {equityQ.isLoading
+                ? 'Calculating equity trajectory…'
+                : 'No COPIED trades recorded yet — performance curve will populate automatically as trades copy.'}
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
@@ -309,7 +308,9 @@ export default function ChartsPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-6 text-sm text-zinc-500">Loading charts…</div>
+        <div className="p-12 text-center text-xs font-medium text-slate-500">
+          Initializing analytics charts…
+        </div>
       }
     >
       <ChartsInner />

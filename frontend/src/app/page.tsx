@@ -1,31 +1,73 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
 import { useVisibleRefetchInterval } from '@/hooks/use-visible-refetch';
+import Link from 'next/link';
+import {
+  Users,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  ArrowUpRight,
+  ShieldCheck,
+  ShieldAlert,
+  Zap,
+  TrendingUp,
+  Activity,
+  Calendar,
+  Layers,
+  ChevronRight,
+  Info,
+} from 'lucide-react';
 
 function statusTone(status: string) {
-  if (status === 'COPIED') return 'text-emerald-400 bg-emerald-500/10';
-  if (status === 'SKIPPED') return 'text-zinc-400 bg-zinc-500/10';
-  if (status === 'FAILED') return 'text-red-400 bg-red-500/10';
-  return 'text-amber-400 bg-amber-500/10';
+  if (status === 'COPIED')
+    return {
+      bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+      label: 'COPIED',
+    };
+  if (status === 'SKIPPED')
+    return {
+      bg: 'bg-slate-800/60 text-slate-400 border-slate-700/50',
+      label: 'SKIPPED',
+    };
+  if (status === 'FAILED')
+    return {
+      bg: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+      label: 'FAILED',
+    };
+  return {
+    bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    label: status,
+  };
 }
 
 function SectionTitle({
   title,
   subtitle,
+  icon: Icon,
+  action,
 }: {
   title: string;
   subtitle?: string;
+  icon?: any;
+  action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-3">
-      <h2 className="text-sm font-medium text-zinc-300">{title}</h2>
-      {subtitle ? (
-        <p className="mt-0.5 text-xs text-zinc-600">{subtitle}</p>
-      ) : null}
+    <div className="mb-4 flex items-center justify-between">
+      <div className="flex items-center gap-2.5">
+        {Icon ? <Icon className="h-5 w-5 text-emerald-400" /> : null}
+        <div>
+          <h2 className="text-base font-bold text-slate-100">{title}</h2>
+          {subtitle ? (
+            <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>
+          ) : null}
+        </div>
+      </div>
+      {action}
     </div>
   );
 }
@@ -41,17 +83,34 @@ function EmptyRow({
 }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-4 py-10 text-center text-zinc-500">
-        {loading ? 'Loading…' : message}
+      <td
+        colSpan={colSpan}
+        className="px-4 py-12 text-center text-xs font-medium text-slate-500"
+      >
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 text-slate-400">
+            <Activity className="h-4 w-4 animate-spin text-emerald-400" />
+            <span>Fetching real-time data…</span>
+          </div>
+        ) : (
+          message
+        )}
       </td>
     </tr>
   );
 }
 
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
   const fast = useVisibleRefetchInterval(4_000);
   const mid = useVisibleRefetchInterval(15_000);
   const slow = useVisibleRefetchInterval(30_000);
+
+  const botQ = useQuery({
+    queryKey: ['bot-status'],
+    queryFn: () => api.bot.status(),
+    refetchInterval: fast,
+  });
 
   const statsQ = useQuery({
     queryKey: ['dashboard-stats'],
@@ -77,51 +136,144 @@ export default function DashboardPage() {
     refetchInterval: mid,
   });
 
+  const bot = botQ.data;
   const s = statsQ.data;
   const compare = compareQ.data;
   const err =
     statsQ.error || tradesQ.error || weeklyQ.error || compareQ.error;
 
+  const copyEnabled = bot?.copyTradingEnabled ?? false;
+
+  const toggleMutation = useMutation({
+    mutationFn: (enable: boolean) =>
+      enable ? api.bot.resume() : api.bot.pause('Dashboard Banner Action'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bot-status'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    },
+  });
+
   return (
-    <div>
+    <div className="space-y-8">
       <PageHeader
-        title="Dashboard"
-        description="Live copy-trading overview, weekly reports, and bot vs leaders."
+        title="Overview Console"
+        description="Real-time copy-trading metrics, leader tracking, execution latency, and security controls."
+        action={
+          <Link
+            href="/settings"
+            className="flex items-center gap-1.5 rounded-lg border border-[#1c202b] bg-[#12141c] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-[#181b26] hover:text-slate-100 transition"
+          >
+            <span>Trading Setup</span>
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+        }
       />
 
+      {/* API Error Notification */}
       {err ? (
-        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          Cannot reach API. Is the backend running on{' '}
-          <code className="text-red-200">
-            {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}
-          </code>
-          ?
-          <div className="mt-1 text-xs text-red-400/80">
-            {(err as Error).message}
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-300 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-rose-400 shrink-0 mt-0.5" />
+          <div>
+            <div className="font-bold">Backend Communication Notice</div>
+            <div className="mt-1 text-rose-400/90">
+              Cannot connect to API at{' '}
+              <code className="rounded bg-black/40 px-1 py-0.5 text-rose-200">
+                {process.env.NEXT_PUBLIC_API_URL || 'https://sparkling-exploration-production-2ad5.up.railway.app'}
+              </code>
+            </div>
+            <div className="mt-1 text-[11px] text-rose-400/70">
+              {(err as Error).message}
+            </div>
           </div>
         </div>
       ) : null}
 
-      {/* KPI cards */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Primary Engine Status & Control Banner */}
+      <div
+        className={`saas-card relative overflow-hidden p-6 border ${
+          copyEnabled
+            ? 'border-emerald-500/30 bg-gradient-to-r from-emerald-950/20 via-[#0f1117] to-[#0f1117]'
+            : 'border-amber-500/30 bg-gradient-to-r from-amber-950/20 via-[#0f1117] to-[#0f1117]'
+        }`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-xl border ${
+                copyEnabled
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                  : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+              }`}
+            >
+              {copyEnabled ? (
+                <ShieldCheck className="h-6 w-6" />
+              ) : (
+                <ShieldAlert className="h-6 w-6" />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-2 w-2 rounded-full ${
+                    copyEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                  }`}
+                />
+                <h3 className="text-lg font-bold text-slate-100">
+                  {copyEnabled
+                    ? 'Copy Trading Live'
+                    : 'Copy Trading Paused (Kill Switch Active)'}
+                </h3>
+              </div>
+              <p className="mt-1 text-xs text-slate-400 max-w-xl">
+                {copyEnabled
+                  ? 'The engine is actively polling leader transactions and placing matching orders on Polymarket CLOB.'
+                  : 'Safety kill-switch is active. Incoming trades will be recorded as SKIPPED until you resume execution.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => toggleMutation.mutate(!copyEnabled)}
+              disabled={toggleMutation.isPending}
+              className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition cursor-pointer shadow-md ${
+                copyEnabled
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
+                  : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
+              }`}
+            >
+              <Zap className="h-4 w-4" />
+              <span>{copyEnabled ? 'Activate Kill Switch (Pause)' : 'Resume Copy Trading'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 4 Core Financial KPI Metric Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Leaders"
-          value={statsQ.isLoading ? '…' : (s?.walletsCount ?? '—')}
-          hint={`${s?.activeWalletsCount ?? 0} active`}
+          label="Tracked Leaders"
+          value={statsQ.isLoading ? '…' : (s?.walletsCount ?? '0')}
+          hint={`${s?.activeWalletsCount ?? 0} active wallets polling`}
+          icon={<Users className="h-4 w-4" />}
+          tone="info"
         />
         <StatCard
-          label="Copied"
-          value={statsQ.isLoading ? '…' : (s?.tradesCopied ?? '—')}
-          hint={`${s?.tradesCopiedLast7Days ?? 0} last 7 days`}
+          label="Trades Copied"
+          value={statsQ.isLoading ? '…' : (s?.tradesCopied ?? '0')}
+          hint={`${s?.tradesCopiedLast7Days ?? 0} trades last 7 days`}
+          icon={<CheckCircle2 className="h-4 w-4" />}
           tone="good"
         />
         <StatCard
-          label="Copy rate"
+          label="Execution Success"
           value={statsQ.isLoading ? '…' : s ? `${s.copyRatePercent}%` : '—'}
           hint={`${s?.tradesSkipped ?? 0} skipped · ${s?.tradesFailed ?? 0} failed`}
+          icon={<TrendingUp className="h-4 w-4" />}
+          tone={s && s.copyRatePercent > 50 ? 'good' : 'warn'}
         />
         <StatCard
-          label="Avg latency"
+          label="Avg Copy Latency"
           value={
             statsQ.isLoading
               ? '…'
@@ -131,100 +283,124 @@ export default function DashboardPage() {
           }
           hint={
             s?.lastCopyLatencyMs != null
-              ? `Last ${s.lastCopyLatencyMs} ms`
-              : 'No copies yet'
+              ? `Last trade ${s.lastCopyLatencyMs} ms`
+              : 'No live latency recorded'
           }
+          icon={<Clock className="h-4 w-4" />}
+          tone="default"
         />
       </div>
 
-      {/* Bot vs leaders */}
-      <section className="mt-8">
+      {/* Bot vs Leaders Breakdown Matrix */}
+      <section className="space-y-4">
         <SectionTitle
-          title="Bot vs leaders"
-          subtitle="How copy outcomes break down for the bot overall and per leader."
+          title="Bot Performance Breakdown"
+          subtitle="Real-time breakdown of copied vs skipped vs failed signals per followed leader."
+          icon={Layers}
         />
-        <div className="grid gap-3 lg:grid-cols-4">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 lg:col-span-1">
-            <div className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-              Bot totals
+
+        <div className="grid gap-4 lg:grid-cols-4">
+          {/* Summary Breakdown Card */}
+          <div className="saas-card p-5 lg:col-span-1 flex flex-col justify-between">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Bot Signal Aggregate
+              </div>
+
+              {compareQ.isLoading ? (
+                <div className="mt-6 text-xs text-slate-500">Loading summary…</div>
+              ) : compare ? (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400">Total Signals</span>
+                    <span className="font-bold tabular-nums text-slate-200">
+                      {compare.bot.totalSignals}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400">Copied</span>
+                    <span className="font-bold tabular-nums text-emerald-400">
+                      {compare.bot.totalCopied}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400">Skipped</span>
+                    <span className="font-bold tabular-nums text-slate-400">
+                      {compare.bot.totalSkipped}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400">Failed</span>
+                    <span className="font-bold tabular-nums text-rose-400">
+                      {compare.bot.totalFailed}
+                    </span>
+                  </div>
+
+                  <div className="border-t border-[#1c202b] pt-3 flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-300">Copy Success Rate</span>
+                    <span className="font-bold text-slate-100 text-sm tabular-nums">
+                      {compare.bot.copyRatePercent}%
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 text-xs text-slate-500">No signals recorded yet.</div>
+              )}
             </div>
-            {compareQ.isLoading ? (
-              <p className="mt-3 text-sm text-zinc-500">Loading…</p>
-            ) : compare ? (
-              <dl className="mt-3 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500">Copied</dt>
-                  <dd className="font-medium text-emerald-400">
-                    {compare.bot.totalCopied}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500">Skipped</dt>
-                  <dd className="text-zinc-300">{compare.bot.totalSkipped}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500">Failed</dt>
-                  <dd className="text-red-400">{compare.bot.totalFailed}</dd>
-                </div>
-                <div className="flex justify-between border-t border-zinc-800 pt-2">
-                  <dt className="text-zinc-500">Copy rate</dt>
-                  <dd className="font-semibold text-zinc-100">
-                    {compare.bot.copyRatePercent}%
-                  </dd>
-                </div>
-              </dl>
-            ) : (
-              <p className="mt-3 text-sm text-zinc-500">No data yet.</p>
-            )}
+
+            <div className="mt-6 rounded-lg bg-[#0d0f15] border border-[#1c202b] p-3 text-[11px] text-slate-400 leading-relaxed">
+              <span className="font-bold text-slate-300">Note:</span> Failed trades automatically generate CRITICAL alerts in the system log.
+            </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-zinc-800 lg:col-span-3">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
+          {/* Leaders Comparison Table */}
+          <div className="saas-card overflow-hidden lg:col-span-3">
+            <table className="saas-table">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 font-medium">Leader</th>
-                  <th className="px-4 py-3 font-medium">Signals</th>
-                  <th className="px-4 py-3 font-medium">Copied</th>
-                  <th className="px-4 py-3 font-medium">Skipped</th>
-                  <th className="px-4 py-3 font-medium">Failed</th>
-                  <th className="px-4 py-3 font-medium">Copy %</th>
-                  <th className="px-4 py-3 font-medium">Fail %</th>
+                  <th>Leader Wallet</th>
+                  <th>Total Signals</th>
+                  <th>Copied</th>
+                  <th>Skipped</th>
+                  <th>Failed</th>
+                  <th>Success %</th>
+                  <th>Fail %</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/80">
+              <tbody>
                 {(compare?.leaders ?? []).length === 0 ? (
                   <EmptyRow
                     colSpan={7}
                     loading={compareQ.isLoading}
-                    message="No leader signals yet. After the bot sees trades, rows appear here."
+                    message="No leader signals recorded yet. Rows populate automatically when leaders make trades."
                   />
                 ) : (
                   compare!.leaders.map((L) => (
-                    <tr key={L.wallet} className="hover:bg-zinc-900/40">
-                      <td className="px-4 py-3">
-                        <div className="text-zinc-200">
-                          {L.label || '—'}
+                    <tr key={L.wallet}>
+                      <td>
+                        <div className="font-bold text-slate-200">
+                          {L.label || 'Unlabeled Leader'}
                         </div>
-                        <div className="font-mono text-[11px] text-zinc-500">
-                          {L.wallet.slice(0, 10)}…
+                        <div className="font-mono text-[11px] text-slate-500">
+                          {L.wallet.slice(0, 12)}…{L.wallet.slice(-6)}
                         </div>
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-zinc-300">
+                      <td className="tabular-nums font-semibold text-slate-300">
                         {L.totalSignals}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-emerald-400">
+                      <td className="tabular-nums font-semibold text-emerald-400">
                         {L.copied}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-zinc-400">
+                      <td className="tabular-nums font-semibold text-slate-400">
                         {L.skipped}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-red-400">
+                      <td className="tabular-nums font-semibold text-rose-400">
                         {L.failed}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-zinc-200">
+                      <td className="tabular-nums font-bold text-slate-200">
                         {L.copyRatePercent}%
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-zinc-400">
+                      <td className="tabular-nums text-slate-400">
                         {L.failRatePercent}%
                       </td>
                     </tr>
@@ -236,151 +412,144 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Weekly reports */}
-      <section className="mt-8">
+      {/* Live Recent Trade Stream */}
+      <section className="space-y-4">
         <SectionTitle
-          title="Weekly reports"
-          subtitle="Last 8 weeks of copy activity (Monday-start weeks)."
+          title="Recent Trade Stream"
+          subtitle="Real-time log of incoming signals and execution status."
+          icon={Activity}
+          action={
+            <Link
+              href="/activity"
+              className="flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition"
+            >
+              <span>View All Stream</span>
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          }
         />
-        <div className="overflow-hidden rounded-xl border border-zinc-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
+
+        <div className="saas-card overflow-hidden">
+          <table className="saas-table">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Week</th>
-                <th className="px-4 py-3 font-medium">Total</th>
-                <th className="px-4 py-3 font-medium">Copied</th>
-                <th className="px-4 py-3 font-medium">Skipped</th>
-                <th className="px-4 py-3 font-medium">Failed</th>
-                <th className="px-4 py-3 font-medium">Copy rate</th>
-                <th className="px-4 py-3 font-medium">Leaders active</th>
+                <th>Timestamp</th>
+                <th>Leader</th>
+                <th>Side</th>
+                <th>Size</th>
+                <th>Execution Status</th>
+                <th>Details / Reason</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/80">
-              {(weeklyQ.data ?? []).length === 0 ? (
-                <EmptyRow
-                  colSpan={7}
-                  loading={weeklyQ.isLoading}
-                  message="No weekly data yet. Weeks fill in as trades are processed."
-                />
-              ) : (
-                weeklyQ.data!.map((w) => (
-                  <tr
-                    key={`${w.weekStart}-${w.weekEnd}`}
-                    className="hover:bg-zinc-900/40"
-                  >
-                    <td className="px-4 py-3 font-mono text-xs text-zinc-300">
-                      {w.weekStart}
-                      <span className="text-zinc-600"> → </span>
-                      {w.weekEnd}
-                    </td>
-                    <td className="px-4 py-3 tabular-nums text-zinc-300">
-                      {w.totalTrades}
-                    </td>
-                    <td className="px-4 py-3 tabular-nums text-emerald-400">
-                      {w.tradesCopied}
-                    </td>
-                    <td className="px-4 py-3 tabular-nums text-zinc-400">
-                      {w.tradesSkipped}
-                    </td>
-                    <td className="px-4 py-3 tabular-nums text-red-400">
-                      {w.tradesFailed}
-                    </td>
-                    <td className="px-4 py-3 tabular-nums text-zinc-200">
-                      {w.copyRatePercent}%
-                    </td>
-                    <td className="px-4 py-3 tabular-nums text-zinc-400">
-                      {w.byWallet?.length ?? 0}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Expand current week by-wallet if any */}
-        {weeklyQ.data?.[0]?.byWallet &&
-        weeklyQ.data[0].byWallet.length > 0 ? (
-          <div className="mt-3 rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-4">
-            <div className="mb-2 text-xs font-medium text-zinc-500">
-              This week by leader ({weeklyQ.data[0].weekStart} →{' '}
-              {weeklyQ.data[0].weekEnd})
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {weeklyQ.data[0].byWallet.map((row) => (
-                <div
-                  key={row.wallet}
-                  className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-xs"
-                >
-                  <div className="text-zinc-300">
-                    {row.label || `${row.wallet.slice(0, 8)}…`}
-                  </div>
-                  <div className="mt-1 text-zinc-500">
-                    <span className="text-emerald-400">{row.copied}</span> c ·{' '}
-                    <span>{row.skipped}</span> s ·{' '}
-                    <span className="text-red-400">{row.failed}</span> f
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </section>
-
-      {/* Recent activity */}
-      <section className="mt-8">
-        <SectionTitle
-          title="Recent activity"
-          subtitle="Latest signals from the copy engine."
-        />
-        <div className="overflow-hidden rounded-xl border border-zinc-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Time</th>
-                <th className="px-4 py-3 font-medium">Leader</th>
-                <th className="px-4 py-3 font-medium">Side</th>
-                <th className="px-4 py-3 font-medium">Size</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Reason</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/80">
+            <tbody>
               {(tradesQ.data ?? []).length === 0 ? (
                 <EmptyRow
                   colSpan={6}
                   loading={tradesQ.isLoading}
-                  message="No trades yet. Add leaders to start copying."
+                  message="No recent trade activity. Poller is scanning Polymarket activity logs."
                 />
               ) : (
-                tradesQ.data!.map((t) => (
-                  <tr key={t.id} className="hover:bg-zinc-900/40">
-                    <td className="px-4 py-3 font-mono text-xs text-zinc-500">
-                      {new Date(t.createdAt).toLocaleString()}
+                tradesQ.data!.map((t) => {
+                  const badge = statusTone(t.status);
+                  return (
+                    <tr key={t.id}>
+                      <td className="font-mono text-xs text-slate-400">
+                        {new Date(t.createdAt).toLocaleString()}
+                      </td>
+                      <td>
+                        <div className="font-semibold text-slate-200">
+                          {t.walletLabel || 'Leader'}
+                        </div>
+                        <div className="font-mono text-[11px] text-slate-500">
+                          {t.wallet.slice(0, 8)}…
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          className={`rounded px-2 py-0.5 text-xs font-bold ${
+                            t.side === 'BUY'
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                          }`}
+                        >
+                          {t.side}
+                        </span>
+                      </td>
+                      <td className="tabular-nums font-semibold text-slate-200">
+                        {t.executedSize || t.size}
+                      </td>
+                      <td>
+                        <span
+                          className={`inline-flex rounded border px-2.5 py-0.5 text-[11px] font-bold ${badge.bg}`}
+                        >
+                          {badge.label}
+                        </span>
+                      </td>
+                      <td className="max-w-[280px] truncate text-xs text-slate-400 font-mono">
+                        {t.reason || '—'}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Weekly Activity Summary */}
+      <section className="space-y-4">
+        <SectionTitle
+          title="Weekly Volume Reports"
+          subtitle="Historical 8-week performance metrics (Monday-start)."
+          icon={Calendar}
+        />
+
+        <div className="saas-card overflow-hidden">
+          <table className="saas-table">
+            <thead>
+              <tr>
+                <th>Week Range</th>
+                <th>Total Signals</th>
+                <th>Copied</th>
+                <th>Skipped</th>
+                <th>Failed</th>
+                <th>Success Rate</th>
+                <th>Active Leaders</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(weeklyQ.data ?? []).length === 0 ? (
+                <EmptyRow
+                  colSpan={7}
+                  loading={weeklyQ.isLoading}
+                  message="No weekly logs recorded yet."
+                />
+              ) : (
+                weeklyQ.data!.map((w) => (
+                  <tr key={`${w.weekStart}-${w.weekEnd}`}>
+                    <td className="font-mono text-xs font-semibold text-slate-300">
+                      {w.weekStart}
+                      <span className="text-slate-600"> → </span>
+                      {w.weekEnd}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="text-zinc-200">
-                        {t.walletLabel || '—'}
-                      </div>
-                      <div className="font-mono text-[11px] text-zinc-500">
-                        {t.wallet.slice(0, 8)}…
-                      </div>
+                    <td className="tabular-nums font-semibold text-slate-300">
+                      {w.totalTrades}
                     </td>
-                    <td className="px-4 py-3 font-medium text-zinc-200">
-                      {t.side}
+                    <td className="tabular-nums font-semibold text-emerald-400">
+                      {w.tradesCopied}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-zinc-300">
-                      {t.executedSize || t.size}
+                    <td className="tabular-nums font-semibold text-slate-400">
+                      {w.tradesSkipped}
                     </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${statusTone(t.status)}`}
-                      >
-                        {t.status}
-                      </span>
+                    <td className="tabular-nums font-semibold text-rose-400">
+                      {w.tradesFailed}
                     </td>
-                    <td className="max-w-[200px] truncate px-4 py-3 text-xs text-zinc-500">
-                      {t.reason || '—'}
+                    <td className="tabular-nums font-bold text-slate-200">
+                      {w.copyRatePercent}%
+                    </td>
+                    <td className="tabular-nums text-slate-400">
+                      {w.byWallet?.length ?? 0} leaders
                     </td>
                   </tr>
                 ))

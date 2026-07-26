@@ -3,11 +3,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
+import { Bell, ShieldAlert, AlertTriangle, CheckCircle, CheckCheck } from 'lucide-react';
 
-function severityClass(s: string) {
-  if (s === 'CRITICAL') return 'text-red-400 bg-red-500/10';
-  if (s === 'WARNING') return 'text-amber-400 bg-amber-500/10';
-  return 'text-sky-400 bg-sky-500/10';
+function severityBadge(s: string) {
+  if (s === 'CRITICAL')
+    return {
+      bg: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+      icon: ShieldAlert,
+    };
+  if (s === 'WARNING')
+    return {
+      bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      icon: AlertTriangle,
+    };
+  return {
+    bg: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    icon: Bell,
+  };
 }
 
 export default function AlertsPage() {
@@ -29,61 +41,78 @@ export default function AlertsPage() {
   });
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
-        title="Alerts"
-        description="Performance warnings from the bot evaluator."
+        title="Critical Alerts & System Events"
+        description="Real-time execution failures, latency spikes, and bot performance notifications."
         action={
           <button
             type="button"
             onClick={() => markAll.mutate()}
-            className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800"
+            className="flex items-center gap-1.5 rounded-lg border border-[#1c202b] bg-[#11131a] px-3.5 py-2 text-xs font-semibold text-slate-300 hover:bg-[#181b26] transition cursor-pointer"
           >
-            Mark all read
+            <CheckCheck className="h-4 w-4 text-emerald-400" />
+            <span>Mark All Read</span>
           </button>
         }
       />
 
-      <ul className="space-y-2">
+      <div className="space-y-3">
         {(listQ.data ?? []).length === 0 ? (
-          <li className="rounded-xl border border-zinc-800 px-4 py-10 text-center text-sm text-zinc-500">
-            {listQ.isLoading ? 'Loading…' : 'No alerts yet.'}
-          </li>
+          <div className="saas-card p-12 text-center text-xs font-medium text-slate-500">
+            {listQ.isLoading ? 'Loading alerts feed…' : 'No alerts recorded. All system parameters are operating normally.'}
+          </div>
         ) : (
-          listQ.data!.map((a) => (
-            <li
-              key={a.id}
-              className={`rounded-xl border border-zinc-800 px-4 py-3 ${
-                a.read ? 'opacity-60' : 'bg-zinc-900/40'
-              }`}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <span
-                    className={`mr-2 inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${severityClass(a.severity)}`}
-                  >
-                    {a.severity}
-                  </span>
-                  <span className="text-xs text-zinc-500">{a.type}</span>
-                  <p className="mt-1 text-sm text-zinc-200">{a.message}</p>
-                  <p className="mt-1 font-mono text-[11px] text-zinc-600">
-                    {new Date(a.createdAt).toLocaleString()}
-                  </p>
+          listQ.data!.map((a) => {
+            const badge = severityBadge(a.severity);
+            const Icon = badge.icon;
+
+            return (
+              <div
+                key={a.id}
+                className={`saas-card p-4 transition ${
+                  a.read ? 'opacity-50' : 'border-l-4 border-l-rose-500'
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg border ${badge.bg}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`rounded border px-2 py-0.5 text-[10px] font-bold ${badge.bg}`}
+                        >
+                          {a.severity}
+                        </span>
+                        <span className="text-xs font-mono font-semibold text-slate-400">
+                          {a.type}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs font-bold text-slate-200">{a.message}</p>
+                      <p className="mt-1 font-mono text-[11px] text-slate-500">
+                        {new Date(a.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {!a.read ? (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 rounded border border-[#1c202b] bg-[#0c0e13] px-2.5 py-1 text-xs font-semibold text-emerald-400 hover:bg-[#151821] transition cursor-pointer"
+                      onClick={() => markOne.mutate(a.id)}
+                    >
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      <span>Mark Read</span>
+                    </button>
+                  ) : null}
                 </div>
-                {!a.read ? (
-                  <button
-                    type="button"
-                    className="text-xs text-emerald-400 hover:underline"
-                    onClick={() => markOne.mutate(a.id)}
-                  >
-                    Mark read
-                  </button>
-                ) : null}
               </div>
-            </li>
-          ))
+            );
+          })
         )}
-      </ul>
+      </div>
     </div>
   );
 }

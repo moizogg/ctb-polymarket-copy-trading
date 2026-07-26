@@ -7,6 +7,17 @@ import { api } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
 import { useVisibleRefetchInterval } from '@/hooks/use-visible-refetch';
+import {
+  Briefcase,
+  RefreshCw,
+  Wallet,
+  ExternalLink,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  AlertTriangle,
+  Layers,
+} from 'lucide-react';
 
 function short(addr: string | null | undefined) {
   if (!addr) return '—';
@@ -22,9 +33,9 @@ function fmt(n: number, digits = 2) {
 }
 
 function pnlClass(n: number) {
-  if (n > 0) return 'text-emerald-400';
-  if (n < 0) return 'text-red-400';
-  return 'text-zinc-400';
+  if (n > 0) return 'text-emerald-400 font-bold';
+  if (n < 0) return 'text-rose-400 font-bold';
+  return 'text-slate-400';
 }
 
 export default function PortfolioPage() {
@@ -59,135 +70,103 @@ export default function PortfolioPage() {
   const s = data?.summary;
 
   return (
-    <div>
+    <div className="space-y-8">
       <PageHeader
-        title="Portfolio"
-        description="Live Polymarket positions (Data API) plus bot local tracking."
+        title="Portfolio & Positions"
+        description="Live Polymarket holdings, position values, unrealized PnL, and internal bot inventory tracking."
         action={
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex rounded-lg border border-zinc-700 p-0.5 text-sm">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex rounded-lg border border-[#1c202b] bg-[#0c0e13] p-1">
               <button
                 type="button"
                 onClick={() => setSource('bot')}
-                className={`rounded-md px-3 py-1.5 ${
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
                   source === 'bot'
-                    ? 'bg-emerald-500/15 text-emerald-400'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Bot account
+                Bot Funder Account
               </button>
               <button
                 type="button"
                 onClick={() => setSource('wallet')}
-                className={`rounded-md px-3 py-1.5 ${
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
                   source === 'wallet'
-                    ? 'bg-emerald-500/15 text-emerald-400'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Connected wallet
+                Connected Web3 Wallet
               </button>
             </div>
+
             {source === 'bot' ? (
               <button
                 type="button"
                 disabled={reconcileMut.isPending}
                 onClick={() => reconcileMut.mutate()}
-                className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
-                title="Sync local bot_positions from live FUNDER holdings"
+                className="flex items-center gap-1.5 rounded-lg border border-[#1c202b] bg-[#11131a] px-3.5 py-2 text-xs font-semibold text-slate-300 hover:bg-[#181b26] disabled:opacity-50 transition cursor-pointer"
+                title="Reconcile local DB positions with live Polymarket holdings"
               >
-                {reconcileMut.isPending ? 'Reconciling…' : 'Reconcile bot DB'}
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${
+                    reconcileMut.isPending ? 'animate-spin text-emerald-400' : ''
+                  }`}
+                />
+                <span>{reconcileMut.isPending ? 'Reconciling…' : 'Reconcile DB'}</span>
               </button>
             ) : null}
           </div>
         }
       />
 
+      {/* Warnings / Notices */}
       {source === 'wallet' && !isConnected ? (
-        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          Connect MetaMask (top right) to load this wallet&apos;s Polymarket
-          positions.
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs font-semibold text-amber-300 flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>Connect your Web3 wallet using the top-right button to view its positions.</span>
         </div>
       ) : null}
 
       {portfolioQ.error ? (
-        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs font-semibold text-rose-300">
           {(portfolioQ.error as Error).message}
         </div>
       ) : null}
 
-      {(data?.warnings?.length ?? 0) > 0 ? (
-        <ul className="mb-4 space-y-1">
-          {data!.warnings.map((w) => (
-            <li
-              key={w}
-              className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-200/90"
-            >
-              {w}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
       {reconcileMut.isSuccess ? (
-        <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
-          Reconciled: created {reconcileMut.data.created}, updated{' '}
-          {reconcileMut.data.updated} for {short(reconcileMut.data.address)}
-        </div>
-      ) : null}
-      {reconcileMut.isError ? (
-        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-          {(reconcileMut.error as Error).message}
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-semibold text-emerald-300">
+          Reconciled: Created {reconcileMut.data.created}, updated {reconcileMut.data.updated} for {short(reconcileMut.data.address)}
         </div>
       ) : null}
 
-      <div className="mb-2 flex flex-wrap gap-3 text-xs text-zinc-500">
-        <span>
-          Viewing:{' '}
-          <span className="font-mono text-zinc-300">
-            {short(data?.address)}
-          </span>
-        </span>
-        <span>
-          Source:{' '}
-          <span className="text-zinc-300">
-            {source === 'bot' ? 'Bot (FUNDER)' : 'Connected wallet'}
-          </span>
-        </span>
-        {data?.asOf ? (
-          <span>
-            As of{' '}
-            <span className="text-zinc-400">
-              {new Date(data.asOf).toLocaleString()}
-            </span>
-          </span>
-        ) : null}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* 4 Stat Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Open positions"
-          value={
-            portfolioQ.isLoading ? '…' : (s?.positionCount ?? '—')
-          }
-          hint={`${s?.localTrackedCount ?? 0} local bot tracks`}
+          label="Open Positions"
+          value={portfolioQ.isLoading ? '…' : (s?.positionCount ?? '0')}
+          hint={`${s?.localTrackedCount ?? 0} tracked in local DB`}
+          icon={<Briefcase className="h-4 w-4" />}
+          tone="info"
         />
         <StatCard
-          label="Current value"
-          value={
-            portfolioQ.isLoading
-              ? '…'
-              : s
-                ? fmt(s.totalCurrentValue)
-                : '—'
-          }
-          hint="Sum of position currentValue"
+          label="Total Position Value"
+          value={portfolioQ.isLoading ? '…' : s ? `$${fmt(s.totalCurrentValue)}` : '—'}
+          hint="Sum of current mark values"
+          icon={<DollarSign className="h-4 w-4" />}
+          tone="default"
         />
         <StatCard
           label="Unrealized PnL"
-          value={
-            portfolioQ.isLoading ? '…' : s ? fmt(s.totalCashPnl) : '—'
+          value={portfolioQ.isLoading ? '…' : s ? `$${fmt(s.totalCashPnl)}` : '—'}
+          hint="Net mark profit/loss"
+          icon={
+            (s?.totalCashPnl ?? 0) >= 0 ? (
+              <TrendingUp className="h-4 w-4" />
+            ) : (
+              <TrendingDown className="h-4 w-4" />
+            )
           }
           tone={
             (s?.totalCashPnl ?? 0) > 0
@@ -198,51 +177,60 @@ export default function PortfolioPage() {
           }
         />
         <StatCard
-          label="Collateral (USDC)"
+          label="USDC Collateral"
           value={
             data?.collateral?.available && data.collateral.balance != null
-              ? fmt(Number(data.collateral.balance) / 1e6, 2)
+              ? `$${fmt(Number(data.collateral.balance) / 1e6, 2)}`
               : '—'
           }
-          hint={data?.collateral?.note || 'Bot CLOB only'}
+          hint={data?.collateral?.note || 'CLOB balance'}
+          icon={<Wallet className="h-4 w-4" />}
+          tone="good"
         />
       </div>
 
-      <section className="mt-8">
-        <h2 className="mb-3 text-sm font-medium text-zinc-300">Positions</h2>
-        <div className="overflow-x-auto rounded-xl border border-zinc-800">
-          <table className="w-full min-w-[800px] text-left text-sm">
-            <thead className="bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
+      {/* Live Positions Table */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Layers className="h-5 w-5 text-emerald-400" />
+            <h2 className="text-base font-bold text-slate-100">Live Positions</h2>
+          </div>
+          <div className="text-xs text-slate-400 font-mono">
+            Viewing: <span className="text-slate-200 font-bold">{short(data?.address)}</span>
+          </div>
+        </div>
+
+        <div className="saas-card overflow-hidden">
+          <table className="saas-table">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Market</th>
-                <th className="px-4 py-3 font-medium">Outcome</th>
-                <th className="px-4 py-3 font-medium">Size</th>
-                <th className="px-4 py-3 font-medium">Avg</th>
-                <th className="px-4 py-3 font-medium">Mark</th>
-                <th className="px-4 py-3 font-medium">Value</th>
-                <th className="px-4 py-3 font-medium">PnL</th>
-                <th className="px-4 py-3 font-medium">Local</th>
+                <th>Market Title</th>
+                <th>Outcome</th>
+                <th>Size</th>
+                <th>Avg Price</th>
+                <th>Current Mark</th>
+                <th>Value ($)</th>
+                <th>Unrealized PnL</th>
+                <th>Local Net Size</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/80">
+            <tbody>
               {(data?.positions ?? []).length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-4 py-12 text-center text-zinc-500"
-                  >
+                  <td colSpan={8} className="px-4 py-12 text-center text-xs font-medium text-slate-500">
                     {portfolioQ.isLoading
-                      ? 'Loading positions…'
+                      ? 'Loading live positions…'
                       : source === 'bot'
-                        ? 'No live positions. Set FUNDER_ADDRESS to your Polymarket proxy, or wait for copies.'
-                        : 'No positions for this wallet on Polymarket.'}
+                        ? 'No active positions found for the bot funder account.'
+                        : 'No positions found for this wallet on Polymarket.'}
                   </td>
                 </tr>
               ) : (
                 data!.positions.map((p) => (
-                  <tr key={`${p.marketId}-${p.tokenId}`} className="hover:bg-zinc-900/40">
-                    <td className="max-w-[240px] px-4 py-3">
-                      <div className="truncate text-zinc-200" title={p.title}>
+                  <tr key={`${p.marketId}-${p.tokenId}`}>
+                    <td className="max-w-[280px]">
+                      <div className="font-bold text-slate-200 truncate" title={p.title}>
                         {p.title}
                       </div>
                       {p.slug ? (
@@ -250,36 +238,39 @@ export default function PortfolioPage() {
                           href={`https://polymarket.com/event/${p.slug}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-[11px] text-emerald-500/80 hover:underline"
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:underline mt-0.5"
                         >
-                          Open market
+                          <span>Open on Polymarket</span>
+                          <ExternalLink className="h-3 w-3" />
                         </a>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3 text-zinc-300">{p.outcome || '—'}</td>
-                    <td className="px-4 py-3 tabular-nums text-zinc-200">
+                    <td>
+                      <span className="rounded bg-slate-800 border border-slate-700 px-2 py-0.5 text-xs font-bold text-slate-200">
+                        {p.outcome || '—'}
+                      </span>
+                    </td>
+                    <td className="tabular-nums font-semibold text-slate-200">
                       {fmt(p.size, 4)}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-zinc-400">
-                      {fmt(p.avgPrice, 3)}
+                    <td className="tabular-nums text-slate-400">
+                      ${fmt(p.avgPrice, 3)}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-zinc-400">
-                      {fmt(p.curPrice, 3)}
+                    <td className="tabular-nums text-slate-400">
+                      ${fmt(p.curPrice, 3)}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-zinc-200">
-                      {fmt(p.currentValue)}
+                    <td className="tabular-nums font-bold text-slate-200">
+                      ${fmt(p.currentValue)}
                     </td>
-                    <td
-                      className={`px-4 py-3 tabular-nums ${pnlClass(p.cashPnl)}`}
-                    >
-                      {fmt(p.cashPnl)}
+                    <td className={`tabular-nums ${pnlClass(p.cashPnl)}`}>
+                      ${fmt(p.cashPnl)}
                       {p.percentPnl ? (
-                        <span className="ml-1 text-[11px] opacity-70">
+                        <span className="ml-1 text-[11px] font-normal opacity-80">
                           ({fmt(p.percentPnl, 1)}%)
                         </span>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-zinc-500">
+                    <td className="font-mono text-xs text-slate-500">
                       {p.localNetSize != null ? fmt(p.localNetSize, 4) : '—'}
                     </td>
                   </tr>
@@ -289,48 +280,6 @@ export default function PortfolioPage() {
           </table>
         </div>
       </section>
-
-      {source === 'bot' && (data?.localPositions?.length ?? 0) > 0 ? (
-        <section className="mt-8">
-          <h2 className="mb-3 text-sm font-medium text-zinc-300">
-            Local bot tracking only
-          </h2>
-          <p className="mb-2 text-xs text-zinc-600">
-            Internal net sizes used by the copy strategy (updated on each copy).
-            Use Reconcile to overwrite from live holdings.
-          </p>
-          <div className="overflow-hidden rounded-xl border border-zinc-800">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-900/80 text-xs uppercase text-zinc-500">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Token</th>
-                  <th className="px-4 py-2 font-medium">Market</th>
-                  <th className="px-4 py-2 font-medium">Net size</th>
-                  <th className="px-4 py-2 font-medium">Updated</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800/80">
-                {data!.localPositions.map((p) => (
-                  <tr key={`${p.marketId}-${p.tokenId}`}>
-                    <td className="max-w-[160px] truncate px-4 py-2 font-mono text-[11px] text-zinc-400">
-                      {p.tokenId}
-                    </td>
-                    <td className="max-w-[160px] truncate px-4 py-2 font-mono text-[11px] text-zinc-500">
-                      {p.marketId}
-                    </td>
-                    <td className="px-4 py-2 tabular-nums text-zinc-200">
-                      {p.netSize}
-                    </td>
-                    <td className="px-4 py-2 text-xs text-zinc-500">
-                      {new Date(p.updatedAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 }

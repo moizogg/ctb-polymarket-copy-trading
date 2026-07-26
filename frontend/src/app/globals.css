@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #09090b;
-  --foreground: #fafafa;
+  --background: #08090c;
+  --foreground: #f3f4f6;
+  --card-bg: #0f1117;
+  --card-hover: #151821;
+  --border-color: #1c202b;
+  --border-subtle: #141721;
 }
 
 @theme inline {
@@ -15,9 +19,78 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #08090c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1f2430;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2d3446;
+}
+
+/* Financial UI Utilities */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.saas-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.saas-card:hover {
+  border-color: #2a3040;
+}
+
+.saas-table {
+  width: 100%;
+  text-align: left;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.saas-table th {
+  background-color: #0d0f15;
+  border-bottom: 1px solid var(--border-color);
+  color: #8a94a6;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+}
+
+.saas-table td {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  color: #e2e8f0;
+}
+
+.saas-table tr:last-child td {
+  border-bottom: none;
+}
+
+.saas-table tr:hover td {
+  background-color: #12151e;
 }
