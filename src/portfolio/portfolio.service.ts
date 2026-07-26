@@ -95,20 +95,22 @@ export class PortfolioService {
     let address: string | null = null;
 
     if (source === 'bot') {
-      address =
+      const raw =
         process.env.FUNDER_ADDRESS?.trim()?.toLowerCase() ||
         params.address?.trim()?.toLowerCase() ||
         null;
+      address = isValidEvmAddress(raw) ? raw : null;
       if (!address) {
         warnings.push(
-          'FUNDER_ADDRESS not set — showing local tracked positions only. Set FUNDER_ADDRESS for live Polymarket holdings.',
+          'FUNDER_ADDRESS not set or placeholder — showing local tracked positions only. Set a valid FUNDER_ADDRESS for live Polymarket holdings.',
         );
       }
     } else {
-      address = params.address?.trim()?.toLowerCase() || null;
-      if (!address || !address.startsWith('0x')) {
+      const raw = params.address?.trim()?.toLowerCase() || null;
+      address = isValidEvmAddress(raw) ? raw : null;
+      if (!address) {
         throw new BadRequestException(
-          'address query param required for source=wallet (0x…)',
+          'Valid EVM address required for source=wallet (0x…)',
         );
       }
     }
@@ -314,4 +316,17 @@ export class PortfolioService {
 
 function round4(n: number): number {
   return Math.round(n * 10000) / 10000;
+}
+
+function isValidEvmAddress(addr?: string | null): boolean {
+  if (!addr) return false;
+  const clean = addr.trim().toLowerCase();
+  if (
+    clean.includes('your') ||
+    clean.includes('0x_') ||
+    clean === '0x0000000000000000000000000000000000000000'
+  ) {
+    return false;
+  }
+  return /^0x[a-f0-9]{40}$/.test(clean);
 }
