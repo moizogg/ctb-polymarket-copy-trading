@@ -32,41 +32,69 @@ export interface PolymarketActivityItem {
 
 @Injectable()
 export class PolymarketService {
-  async getProxyWallet(username: string): Promise<string | null> {
-    const url = `https://polymarket.com/@${username}`;
+  async getProxyWallet(usernameRaw: string): Promise<string | null> {
+    const username = (usernameRaw || '').trim().replace(/^@/, '');
+    if (!username) return null;
 
-    const { data: html } = await axios.get(url, {
-      headers: {
-        // Important to avoid bot blocking
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
-    });
-
-    const $ = cheerio.load(html);
-
-    const nextDataRaw = $('#__NEXT_DATA__').html();
-    if (!nextDataRaw) {
-      throw new InternalServerErrorException('__NEXT_DATA__ not found');
+    // Direct EVM wallet address passed instead of username
+    if (/^0x[a-fA-F0-9]{40}$/.test(username)) {
+      return username.toLowerCase();
     }
 
-    let nextData: any;
+    // Attempt 1: Polymarket Gamma API profile lookup
     try {
-      nextData = JSON.parse(nextDataRaw);
+      const { data } = await axios.get('https://gamma-api.polymarket.com/profiles', {
+        params: { username },
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CTB/1.0)' },
+        timeout: 10_000,
+      });
+      if (Array.isArray(data) && data[0]?.proxyWallet) {
+        return data[0].proxyWallet.toLowerCase();
+      }
+      if (data?.proxyWallet) {
+        return data.proxyWallet.toLowerCase();
+      }
     } catch {
-      throw new InternalServerErrorException('Failed to parse __NEXT_DATA__');
+      /* fallback to page scraping */
     }
 
-    const queries =
-      nextData?.props?.pageProps?.dehydratedState?.queries;
+    // Attempt 2: HTML Scraping with regex fallback & __NEXT_DATA__
+    try {
+      const url = `https://polymarket.com/@${username}`;
+      const { data: html } = await axios.get(url, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        timeout: 10_000,
+      });
 
-    if (!Array.isArray(queries)) return null;
-
-    for (const q of queries) {
-      const proxyWallet = q?.state?.data?.proxyWallet;
-      if (proxyWallet) {
-        return proxyWallet;
+      // Regex matching for embedded JSON fields
+      const regexMatch =
+        html.match(/"proxyWallet"\s*:\s*"(0x[a-fA-F0-9]{40})"/i) ||
+        html.match(/"address"\s*:\s*"(0x[a-fA-F0-9]{40})"/i);
+      if (regexMatch?.[1]) {
+        return regexMatch[1].toLowerCase();
       }
+
+      // __NEXT_DATA__ Cheerio parsing
+      const $ = cheerio.load(html);
+      const nextDataRaw = $('#__NEXT_DATA__').html();
+      if (nextDataRaw) {
+        const nextData = JSON.parse(nextDataRaw);
+        const queries = nextData?.props?.pageProps?.dehydratedState?.queries;
+        if (Array.isArray(queries)) {
+          for (const q of queries) {
+            const proxyWallet = q?.state?.data?.proxyWallet;
+            if (proxyWallet && typeof proxyWallet === 'string') {
+              return proxyWallet.toLowerCase();
+            }
+          }
+        }
+      }
+    } catch {
+      /* return null if not resolvable */
     }
 
     return null;
