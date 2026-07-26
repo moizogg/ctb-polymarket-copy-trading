@@ -56,28 +56,22 @@ export default function StatsPage() {
     refetchInterval,
   });
 
-  const equityQ = useQuery({
-    queryKey: ['bot-equity'],
-    queryFn: () => api.charts.equity(),
-    refetchInterval,
-  });
-
-  const trades = tradesQ.data ?? [];
+  const rawTrades = tradesQ.data;
   const portfolio = portfolioQ.data;
   const stats = statsQ.data;
   const compare = compareQ.data;
-  const equity = equityQ.data;
 
   // Filter trades based on timeframe
   const filteredTrades = useMemo(() => {
-    if (timeframe === 'all') return trades;
+    const tradesList = rawTrades ?? [];
+    if (timeframe === 'all') return tradesList;
     const now = Date.now();
     const cutoff =
       timeframe === '24h'
         ? now - 24 * 60 * 60 * 1000
         : now - 7 * 24 * 60 * 60 * 1000;
-    return trades.filter((t) => new Date(t.createdAt).getTime() >= cutoff);
-  }, [trades, timeframe]);
+    return tradesList.filter((t) => new Date(t.createdAt).getTime() >= cutoff);
+  }, [rawTrades, timeframe]);
 
   // Derived financial metrics
   const financialMetrics = useMemo(() => {
@@ -234,7 +228,7 @@ export default function StatsPage() {
             label="Total Trades Processed"
             value={isLoading ? '…' : fmtNum(stats?.totalTrades)}
             hint={`${stats?.tradesCopied ?? 0} copied · ${stats?.tradesSkipped ?? 0} skipped · ${stats?.tradesFailed ?? 0} failed`}
-            tone="info"
+            tone="default"
           />
           <StatCard
             label="Copy Success Rate"
@@ -262,7 +256,7 @@ export default function StatsPage() {
                 ? `Last trade latency: ${stats.lastCopyLatencyMs} ms`
                 : 'CLOB order placement time'
             }
-            tone="info"
+            tone="default"
           />
         </div>
       </section>
