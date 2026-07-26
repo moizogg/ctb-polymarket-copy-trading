@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
@@ -18,6 +18,7 @@ export class AlertsService {
   private readonly logger = new Logger(AlertsService.name);
 
   constructor(
+    @Inject(forwardRef(() => DashboardService))
     private readonly dashboard: DashboardService,
     @InjectRepository(PerformanceAlert)
     private readonly repo: Repository<PerformanceAlert>,

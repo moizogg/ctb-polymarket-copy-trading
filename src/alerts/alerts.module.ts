@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DashboardModule } from '../dashboard/dashboard.module';
 import { AlertsService } from './alerts.service';
@@ -7,7 +7,7 @@ import { PerformanceAlert } from './entities/performance-alert.entity';
 
 @Module({
   imports: [
-    DashboardModule,
+    forwardRef(() => DashboardModule),
     TypeOrmModule.forFeature([PerformanceAlert]),
   ],
   controllers: [AlertsController],

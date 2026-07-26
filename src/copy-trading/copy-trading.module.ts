@@ -14,7 +14,7 @@ import { AlertsModule } from 'src/alerts/alerts.module';
     forwardRef(() => PolymarketModule),
     TypeOrmModule.forFeature([LeaderTrade, BotPosition]),
     BotModule,
-    AlertsModule,
+    forwardRef(() => AlertsModule),
   ],
   providers: [CopyTradingService, CopyTradingStrategy, PolymarketClient],
   exports: [CopyTradingService],
