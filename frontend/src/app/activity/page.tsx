@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
 import { useVisibleRefetchInterval } from '@/hooks/use-visible-refetch';
-import { Activity, LineChart, Filter, Clock } from 'lucide-react';
+import { LineChart, Filter } from 'lucide-react';
 
 function statusTone(status: string) {
   if (status === 'COPIED')

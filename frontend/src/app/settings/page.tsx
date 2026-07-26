@@ -5,15 +5,10 @@ import { useAccount } from 'wagmi';
 import { api, API_URL } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
 import {
-  Settings,
   Zap,
   Shield,
   Wallet,
   Server,
-  Trash2,
-  CheckCircle2,
-  AlertTriangle,
-  Lock,
 } from 'lucide-react';
 
 export default function SettingsPage() {

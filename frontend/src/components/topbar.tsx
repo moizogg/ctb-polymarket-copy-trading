@@ -6,9 +6,6 @@ import { api } from '@/lib/api';
 import { ConnectWallet } from '@/components/connect-wallet';
 import { useVisibleRefetchInterval } from '@/hooks/use-visible-refetch';
 import {
-  ShieldAlert,
-  ShieldCheck,
-  Zap,
   Activity,
   Wallet,
   RefreshCw,

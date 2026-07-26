@@ -1,5 +1,6 @@
 'use client';
 
+import { ComponentType, ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
@@ -20,7 +21,6 @@ import {
   Calendar,
   Layers,
   ChevronRight,
-  Info,
 } from 'lucide-react';
 
 function statusTone(status: string) {
@@ -53,8 +53,8 @@ function SectionTitle({
 }: {
   title: string;
   subtitle?: string;
-  icon?: any;
-  action?: React.ReactNode;
+  icon?: ComponentType<{ className?: string }>;
+  action?: ReactNode;
 }) {
   return (
     <div className="mb-4 flex items-center justify-between">

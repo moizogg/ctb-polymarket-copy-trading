@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
 import { PriceChart } from '@/components/price-chart';
-import { LineChart, Search, Activity, TrendingUp, Layers } from 'lucide-react';
+import { LineChart, Search, TrendingUp, Layers } from 'lucide-react';
 
 const INTERVALS = [
   { id: '1h', label: '1H' },

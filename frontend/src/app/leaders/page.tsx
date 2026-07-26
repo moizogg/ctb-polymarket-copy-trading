@@ -5,14 +5,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
 import {
-  Users,
   Plus,
   Trash2,
   Power,
-  Search,
   UserCheck,
   AlertCircle,
-  Hash,
 } from 'lucide-react';
 
 export default function LeadersPage() {
