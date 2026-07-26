@@ -7,12 +7,14 @@ import { PolymarketClient } from 'src/clients/polymarket.client';
 import { LeaderTrade } from './entities/leader-trade.entity';
 import { BotPosition } from './entities/bot-position.entity';
 import { BotModule } from 'src/bot/bot.module';
+import { AlertsModule } from 'src/alerts/alerts.module';
 
 @Module({
   imports: [
     forwardRef(() => PolymarketModule),
     TypeOrmModule.forFeature([LeaderTrade, BotPosition]),
     BotModule,
+    AlertsModule,
   ],
   providers: [CopyTradingService, CopyTradingStrategy, PolymarketClient],
   exports: [CopyTradingService],

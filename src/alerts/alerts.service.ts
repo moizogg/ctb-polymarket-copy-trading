@@ -147,4 +147,20 @@ export class AlertsService {
       .execute();
     return { count: result.affected ?? 0 };
   }
+
+  async createTradeFailureAlert(tradeId: string, reason: string): Promise<void> {
+    try {
+      const alert = this.repo.create({
+        type: AlertType.HIGH_FAIL_RATE,
+        severity: AlertSeverity.CRITICAL,
+        message: `Copy trade ${tradeId} failed: ${reason}`,
+        metadata: { tradeId, reason },
+        read: false,
+      });
+      await this.repo.save(alert);
+      this.logger.warn(`Alert created for failed trade ${tradeId}: ${reason}`);
+    } catch (err) {
+      this.logger.warn('Failed to save trade failure alert', err);
+    }
+  }
 }

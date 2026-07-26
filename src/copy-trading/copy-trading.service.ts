@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PolymarketClient } from 'src/clients/polymarket.client';
 import { BotService } from 'src/bot/bot.service';
+import { AlertsService } from 'src/alerts/alerts.service';
 import { CopyTradingStrategy, NormalizedTrade } from './copy-trading.strategy';
 import { BotPosition } from './entities/bot-position.entity';
 import { LeaderTrade, TradeStatus } from './entities/leader-trade.entity';
@@ -15,6 +16,7 @@ export class CopyTradingService {
     private readonly polyClient: PolymarketClient,
     private readonly strategy: CopyTradingStrategy,
     private readonly botService: BotService,
+    private readonly alertsService: AlertsService,
     @InjectRepository(LeaderTrade)
     private readonly tradesRepo: Repository<LeaderTrade>,
     @InjectRepository(BotPosition)
@@ -118,6 +120,7 @@ export class CopyTradingService {
         const message =
           err instanceof Error ? err.message : String(err ?? 'Unknown error');
         await this.updateTradeStatus(tradeId, TradeStatus.FAILED, message);
+        await this.alertsService.createTradeFailureAlert(tradeId, message);
       }
     }
   }
