@@ -1,0 +1,88 @@
+2026-07-26T03:46:25.025160862Z [inf]  > node dist/main
+2026-07-26T03:46:25.025171890Z [inf]  
+2026-07-26T03:46:25.025250919Z [err]  npm warn config production Use `--omit=dev` instead.
+2026-07-26T03:46:25.025256444Z [inf]  
+2026-07-26T03:46:25.025261989Z [inf]  > backend@0.0.1 start:prod
+2026-07-26T03:46:25.115052946Z [inf]  Starting Container
+2026-07-26T03:46:25.980107797Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:25 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mScheduleModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:25.980116790Z [err]  (node:25) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-26T03:46:25.980124448Z [err]  In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-26T03:46:25.980131724Z [err]  
+2026-07-26T03:46:25.980139821Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:25 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDiscoveryModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:25.980140996Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:25 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+2026-07-26T03:46:25.980149795Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:25 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +21ms[39m
+2026-07-26T03:46:25.980150701Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:25 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +1ms[39m
+2026-07-26T03:46:25.980157987Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:25 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:25.980158317Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:25 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+2026-07-26T03:46:25.980165574Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:25 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mThrottlerModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:25.983164945Z [err]  - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-26T03:46:25.983173506Z [err]  - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-26T03:46:25.983179136Z [err]  
+2026-07-26T03:46:25.983183875Z [err]  See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-26T03:46:25.983188370Z [err]  (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-26T03:46:25.983249128Z [err]  To prepare for this change:
+2026-07-26T03:46:27.036462999Z [err]  (node:25) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+2026-07-26T03:46:27.319446735Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmCoreModule dependencies initialized[39m[38;5;3m +1788ms[39m
+2026-07-26T03:46:27.319455758Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.319462159Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.319467569Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.319472921Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.319479028Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.319484867Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.319489948Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.319495301Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.321911332Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mCopyTradingModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.321921860Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mFollowedWalletsModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.321927806Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mBotModule dependencies initialized[39m[38;5;3m +1ms[39m
+2026-07-26T03:46:27.321932602Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mOperatorWalletsModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.321937356Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPortfolioModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.321942475Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mChartsModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.321947352Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDashboardModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.321953826Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPolymarketModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.321958272Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAlertsModule dependencies initialized[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.324113300Z [err]  [CTB] WARNING: NODE_ENV=production without API_KEY. Set API_KEY to protect mutating routes.
+2026-07-26T03:46:27.356043951Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mHealthController {/}:[39m[38;5;3m +30ms[39m
+2026-07-26T03:46:27.356056279Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/, GET} route[39m[38;5;3m +3ms[39m
+2026-07-26T03:46:27.356068044Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/health, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.356077660Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPolymarketController {/polymarket}:[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.356083198Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/polymarket/activity, GET} route[39m[38;5;3m +1ms[39m
+2026-07-26T03:46:27.356089004Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/polymarket/proxy-wallet/:username, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.356094612Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mFollowedWalletsController {/wallets}:[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.356100431Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/wallets, GET} route[39m[38;5;3m +1ms[39m
+2026-07-26T03:46:27.356106673Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/wallets/active, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.356112842Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/wallets, POST} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.356117876Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/wallets/:id, PATCH} route[39m[38;5;3m +1ms[39m
+2026-07-26T03:46:27.359103083Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/wallets/:id, DELETE} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.359115136Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/wallets/by-wallet/:wallet, DELETE} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.359122391Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mBotController {/bot}:[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.359129373Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/bot/status, GET} route[39m[38;5;3m +1ms[39m
+2026-07-26T03:46:27.359135208Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/bot/pause, POST} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.359142066Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/bot/resume, POST} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.359148150Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mDashboardController {/dashboard}:[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.359154033Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/dashboard/stats, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.359160136Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/dashboard/recent-trades, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.359166922Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/dashboard/reports/weekly, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.359173501Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/dashboard/analysis/compare, GET} route[39m[38;5;3m +1ms[39m
+2026-07-26T03:46:27.361518763Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAlertsController {/alerts}:[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.361528073Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/alerts, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.361534910Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/alerts/read-all, PATCH} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.361540721Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/alerts/:id/read, PATCH} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.361546091Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mOperatorWalletsController {/operator/wallets}:[39m[38;5;3m +1ms[39m
+2026-07-26T03:46:27.361551044Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/operator/wallets, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.361555316Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/operator/wallets, POST} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.361559755Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/operator/wallets/:id/primary, PATCH} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.361564010Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/operator/wallets/:id, DELETE} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.361598026Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPortfolioController {/portfolio}:[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.364369004Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/portfolio, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.364380303Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/portfolio/reconcile, POST} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.364386012Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mChartsController {/charts}:[39m[38;5;3m +1ms[39m
+2026-07-26T03:46:27.364403253Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/charts/markets/search, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.364409766Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/charts/price-history, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.364417025Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/charts/equity, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:27.364422704Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/charts/recent-tokens, GET} route[39m[38;5;3m +0ms[39m
+2026-07-26T03:46:28.001184912Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:46:27 AM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +144ms[39m
+2026-07-26T03:46:28.001190946Z [inf]  CTB API listening on http://localhost:8080 (docs: /api)
+2026-07-26T03:50:09.813729979Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 3:50:00 AM [32m    LOG[39m [38;5;3m[AlertsService] [39m[32mAlert created: NO_RECENT_TRADES - No trades recorded yet. Add followed wallets to start copy trading.[39m
+2026-07-26T06:00:08.261963913Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 6:00:00 AM [32m    LOG[39m [38;5;3m[AlertsService] [39m[32mAlert created: NO_RECENT_TRADES - No trades recorded yet. Add followed wallets to start copy trading.[39m
+2026-07-26T08:10:04.201771847Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 8:10:00 AM [32m    LOG[39m [38;5;3m[AlertsService] [39m[32mAlert created: NO_RECENT_TRADES - No trades recorded yet. Add followed wallets to start copy trading.[39m
+2026-07-26T10:20:04.944783248Z [inf]  [32m[Nest] 25  - [39m07/26/2026, 10:20:00 AM [32m    LOG[39m [38;5;3m[AlertsService] [39m[32mAlert created: NO_RECENT_TRADES - No trades recorded yet. Add followed wallets to start copy trading.[39m
