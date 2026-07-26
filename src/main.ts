@@ -27,8 +27,8 @@ async function bootstrap() {
   }
 
   app.enableCors({
-    // Dev: allow all. Prod: only listed origins (or fail open with warn above).
-    origin: corsOrigins?.length ? corsOrigins : isProd ? false : true,
+    // Dev & Prod: allow matching origins, or true if not explicitly restricted
+    origin: corsOrigins?.length ? corsOrigins : true,
     credentials: true,
   });
 
