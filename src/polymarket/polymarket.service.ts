@@ -46,16 +46,37 @@ export class PolymarketService {
       const { data } = await axios.get('https://gamma-api.polymarket.com/profiles', {
         params: { username },
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CTB/1.0)' },
-        timeout: 10_000,
+        timeout: 8_000,
       });
-      if (Array.isArray(data) && data[0]?.proxyWallet) {
-        return data[0].proxyWallet.toLowerCase();
+      if (Array.isArray(data) && data.length > 0) {
+        const match = data.find(
+          (p) =>
+            p?.username?.toLowerCase() === username.toLowerCase() ||
+            p?.pseudonym?.toLowerCase() === username.toLowerCase(),
+        );
+        if (match?.proxyWallet) return match.proxyWallet.toLowerCase();
+        if (data[0]?.proxyWallet) return data[0].proxyWallet.toLowerCase();
       }
-      if (data?.proxyWallet) {
-        return data.proxyWallet.toLowerCase();
+      if (data?.proxyWallet) return data.proxyWallet.toLowerCase();
+    } catch {
+      /* fallback */
+    }
+
+    // Attempt 1b: Polymarket Gamma public-search
+    try {
+      const { data } = await axios.get('https://gamma-api.polymarket.com/public-search', {
+        params: { q: username },
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CTB/1.0)' },
+        timeout: 8_000,
+      });
+      const profiles = data?.profiles ?? [];
+      for (const p of profiles) {
+        if (p?.proxyWallet) {
+          return p.proxyWallet.toLowerCase();
+        }
       }
     } catch {
-      /* fallback to page scraping */
+      /* fallback */
     }
 
     // Attempt 2: HTML Scraping with regex fallback & __NEXT_DATA__
