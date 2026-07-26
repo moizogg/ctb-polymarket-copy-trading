@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { subDays } from 'date-fns';
 import { TradeStatus } from '../copy-trading/entities/leader-trade.entity';
 import { startOfWeek, subWeeks, format } from 'date-fns';
@@ -86,6 +86,7 @@ export interface ComparativeAnalysisDto {
 @Injectable()
 export class DashboardService {
   constructor(
+    @Inject(forwardRef(() => CopyTradingService))
     private readonly copyTrading: CopyTradingService,
     private readonly wallets: FollowedWalletsService,
   ) {}
