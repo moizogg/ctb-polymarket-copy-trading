@@ -79,6 +79,25 @@ export class CopyTradingService {
         return;
       }
 
+      // Check if live trading credentials are ready
+      const { funderAddress, apiCredsJson } = await this.botService.getDynamicCreds();
+      const pk = process.env.PRIVATE_KEY?.trim() || '';
+      const hasPk = !!pk && !pk.includes('your') && !pk.includes('0x_') && pk.length >= 64;
+      const hasFunder = !!funderAddress && !funderAddress.includes('your') && !funderAddress.includes('0x_') && funderAddress.length === 42;
+      const hasCreds = (hasPk || !!apiCredsJson) && hasFunder;
+
+      if (!hasCreds) {
+        await this.updateTradeStatus(
+          trade.tradeId,
+          TradeStatus.SKIPPED,
+          'Live trading credentials not configured (click Link Wallet in Settings)',
+        );
+        this.logger.debug(
+          `Skip trade ${trade.tradeId}: Live trading credentials not configured`,
+        );
+        return;
+      }
+
       const executedAt = new Date();
       await this.executeTrade(trade, decision.side!, decision.size!);
 
