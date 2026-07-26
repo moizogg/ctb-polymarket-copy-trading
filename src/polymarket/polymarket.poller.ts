@@ -45,7 +45,13 @@ export class PolymarketPoller implements OnModuleInit {
   }
 
   async onModuleInit() {
-    await this.logLatestTradesForTest();
+    try {
+      await this.logLatestTradesForTest();
+    } catch (err) {
+      this.logger.warn(
+        `Poller onModuleInit log warning: ${err instanceof Error ? err.message : err}`,
+      );
+    }
   }
 
   private async logLatestTradesForTest() {
