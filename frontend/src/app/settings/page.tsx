@@ -122,8 +122,9 @@ export default function SettingsPage() {
                   await api.bot.saveConfig({ funderAddress: funder });
                   qc.invalidateQueries({ queryKey: ['bot-status'] });
                   alert(`Execution wallet set to ${funder}! To enable live trading, turn off the Pause Kill Switch above.`);
-                } catch (err: any) {
-                  alert(`Failed setting execution wallet: ${err.message}`);
+                } catch (err: unknown) {
+                  const msg = err instanceof Error ? err.message : String(err);
+                  alert(`Failed setting execution wallet: ${msg}`);
                 }
               }}
               className="rounded-lg bg-emerald-500/90 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400"

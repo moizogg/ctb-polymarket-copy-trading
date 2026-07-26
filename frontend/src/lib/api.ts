@@ -242,7 +242,10 @@ export const api = {
 
   bot: {
     status: () => request<BotStatus>('/bot/status'),
-    saveConfig: (data: { funderAddress: string; apiCreds?: any }) =>
+    saveConfig: (data: {
+      funderAddress: string;
+      apiCreds?: Record<string, unknown> | string;
+    }) =>
       request<BotStatus>('/bot/config', {
         method: 'POST',
         body: JSON.stringify(data),
