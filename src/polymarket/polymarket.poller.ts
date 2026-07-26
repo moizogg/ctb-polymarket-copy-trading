@@ -175,21 +175,21 @@ export class PolymarketPoller implements OnModuleInit {
           newTrades.push(a);
         }
 
-        // Always advance cursor; handleTrade respects kill switch
-        for (const a of newTrades.reverse()) {
-          await this.copyService.handleTrade(
-            makerAddress,
-            this.activityToRawTrade(a, fetchedAt),
-          );
-        }
-
         if (newTrades.length > 0) {
           const newCursorId = this.activityTradeId(newTrades[0]);
+
+          for (const a of [...newTrades].reverse()) {
+            await this.copyService.handleTrade(
+              makerAddress,
+              this.activityToRawTrade(a, fetchedAt),
+            );
+          }
+
           await this.followedWallets.update(walletId, {
             lastTradeId: newCursorId,
           });
           this.logger.log(
-            `  [${label}] ${newTrades.length} new TRADE(s) processed, cursor updated${copyEnabled ? '' : ' (copy paused)'}`,
+            `  [${label}] ${newTrades.length} new TRADE(s) processed, cursor updated to ${newCursorId}${copyEnabled ? '' : ' (copy paused)'}`,
           );
         }
       }
